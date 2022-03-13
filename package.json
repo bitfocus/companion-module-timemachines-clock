@@ -1,0 +1,31 @@
+{
+	"name": "timemachines-clock",
+	"version": "1.0.0",
+	"api_version": "1.0",
+	"keywords": [
+		"clock",
+		"timer"
+	],
+	"manufacturer": "Time Machines Corp",
+	"product": [
+		"Clock"
+	],
+	"shortname": "timemachines-clock",
+	"description": "Companion module for Time Machines Corp Clocks, Displays, and Timers",
+	"main": "src/index.js",
+	"scripts": {
+		"test": "echo \"Error: no test specified\" && exit 1"
+	},
+	"author": "Joseph Adams <josephdadams@gmail.com>",
+	"license": "MIT",
+	"homepage": "https://github.com/bitfocus/companion-module-timemachines-clock#readme",
+	"bugs": {
+		"url": "https://github.com/bitfocus/companion-module-timemachines-clock/issues"
+	},
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/bitfocus/companion-module-timemachines-clock.git"
+	},
+	"dependencies": {
+	}
+}
