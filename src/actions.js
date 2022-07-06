@@ -281,6 +281,62 @@ module.exports = {
 			}
 		}
 
+		actions.increaseTimerWhileRunning = {
+			label: 'Increase Timer While Running',
+			options: [
+				{
+					type: 'textinput',
+					label: 'Hours',
+					id: 'hours',
+					default: '0'
+				},
+				{
+					type: 'textinput',
+					label: 'Minutes',
+					id: 'minutes',
+					default: '1'
+				},
+				{
+					type: 'textinput',
+					label: 'Seconds',
+					id: 'seconds',
+					default: '0'
+				}
+			],
+			callback: function (action, bank) {
+				let opt = action.options;
+				self.modifyTimerWhileRunning('increase', opt.hours, opt.minutes, opt.seconds);
+			}
+		}
+
+		actions.decreaseTimerWhileRunning = {
+			label: 'Decrease Timer While Running',
+			options: [
+				{
+					type: 'textinput',
+					label: 'Hours',
+					id: 'hours',
+					default: '0'
+				},
+				{
+					type: 'textinput',
+					label: 'Minutes',
+					id: 'minutes',
+					default: '1'
+				},
+				{
+					type: 'textinput',
+					label: 'Seconds',
+					id: 'seconds',
+					default: '0'
+				}
+			],
+			callback: function (action, bank) {
+				let opt = action.options;
+				self.modifyTimerWhileRunning('decrease', opt.hours, opt.minutes, opt.seconds);
+			}
+		}
+
 		actions.executeStoredProgram = {
 			label: 'Execute Stored Program',
 			options: [

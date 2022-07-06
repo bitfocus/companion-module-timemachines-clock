@@ -539,6 +539,47 @@ instance.prototype.setDownTimerWhileRunning = function(hours, minutes, seconds, 
 	}
 };
 
+instance.prototype.modifyTimerWhileRunning = function(mode, hours, minutes, seconds) {
+	//used to increase/decrease a timer while it is still running
+	let self = this;
+
+	if (self.DEVICEINFO.timer.indexOf(':')) {
+		let currentTimerArray = self.DEVICEINFO.timer.split(':');
+		
+		let currentHours = parseInt(currentTimerArray[0]);
+		let currentMinutes = parseInt(currentTimerArray[1]);
+		let currentSeconds = parseInt(currentTimerArray[2]);
+
+		let newHours = currentHours;
+		let newMinutes = currentMinutes;
+		let newSeconds = currentSeconds;
+
+		if (mode == 'increase') {
+			newHours = currentHours + parseInt(hours);
+			newMinutes = currentMinutes + parseInt(minutes);
+			newSeconds = currentSeconds + parseInt(seconds);	
+		}
+		else if (mode == 'decrease') {
+			newHours = currentHours - parseInt(hours);
+			newMinutes = currentMinutes - parseInt(minutes);
+			newSeconds = currentSeconds - parseInt(seconds);
+		}
+		
+		if (self.DEVICEINFO.timerMode == 'up' || self.DEVICEINFO.displayMode == 'countup') {
+			self.setUpTimerWhileRunning(newHours, newMinutes, newSeconds, 0, 0);
+		}
+		else if (self.DEVICEINFO.timerMode == 'down' || self.DEVICEINFO.displayMode == 'countdown') {
+			self.setDownTimerWhileRunning(newHours, newMinutes, newSeconds, 0, 0);
+		}
+		else {
+			self.log('warn', 'Unable to modify Timer: Clock not in Up/Down Timer mode.');
+		}
+	}
+	else {
+		self.log('warn', 'Unable to modify Timer: No Current Time Data Available. Is there a Timer running?');
+	}
+};
+
 instance.prototype.executeStoredProgram = function(program) {
 	let self = this;
 
