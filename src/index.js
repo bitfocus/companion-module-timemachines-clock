@@ -557,12 +557,32 @@ instance.prototype.modifyTimerWhileRunning = function(mode, hours, minutes, seco
 		if (mode == 'increase') {
 			newHours = currentHours + parseInt(hours);
 			newMinutes = currentMinutes + parseInt(minutes);
-			newSeconds = currentSeconds + parseInt(seconds);	
+			newSeconds = currentSeconds + parseInt(seconds);
+			
+			if (newSeconds > 59) {
+				newMinutes++;
+				newSeconds = 0;
+			}
+
+			if (newMinutes > 59) {
+				newHours++;
+				newMinutes = 0;
+			}
 		}
 		else if (mode == 'decrease') {
 			newHours = currentHours - parseInt(hours);
 			newMinutes = currentMinutes - parseInt(minutes);
 			newSeconds = currentSeconds - parseInt(seconds);
+
+			if (newSeconds < 0) {
+				newMinutes--;
+				newSeconds = 59;
+			}
+
+			if (newMinutes < 0) {
+				newHours--;
+				newMinutes = 59;
+			}
 		}
 		
 		if (self.DEVICEINFO.timerMode == 'up' || self.DEVICEINFO.displayMode == 'countup') {
