@@ -111,6 +111,11 @@ instance.prototype.updateConfig = function (config) {
 
 	self.status(self.STATUS_WARNING, 'connecting')
 
+	if (self.INTERVAL) {
+		clearInterval(self.INTERVAL)
+		self.INTERVAL = null
+	}
+
 	self.init_connection()
 
 	self.init_actions()
