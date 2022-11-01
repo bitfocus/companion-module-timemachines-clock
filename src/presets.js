@@ -1,8 +1,8 @@
 module.exports = {
 	setPresets: function () {
-		let self = this;
+		let self = this
 
-		let presets = [];
+		let presets = []
 
 		const foregroundColor = self.rgb(255, 255, 255) // White
 		const foregroundColorBlack = self.rgb(0, 0, 0) // Black
@@ -22,7 +22,7 @@ module.exports = {
 				size: '14',
 				color: '16777215',
 				bgcolor: self.rgb(0, 0, 0),
-			}
+			},
 		})
 
 		presets.push({
@@ -34,42 +34,42 @@ module.exports = {
 				size: '14',
 				color: '16777215',
 				bgcolor: self.rgb(0, 0, 0),
-				latch: true
+				latch: true,
 			},
 			actions: [
 				{
-					action: 'startCountUpTimer'
-				}
+					action: 'startCountUpTimer',
+				},
 			],
 			release_actions: [
 				{
-					action: 'pauseCountUpTimer'
-				}
+					action: 'pauseCountUpTimer',
+				},
 			],
 			feedbacks: [
 				{
 					type: 'timerState',
 					options: {
 						mode: 'countup',
-						state: 'running'
+						state: 'running',
 					},
 					style: {
 						color: foregroundColor,
-						bgcolor: backgroundColorGreen
-					}
+						bgcolor: backgroundColorGreen,
+					},
 				},
 				{
 					type: 'timerState',
 					options: {
 						mode: 'countup',
-						state: 'stopped'
+						state: 'stopped',
 					},
 					style: {
 						color: foregroundColor,
-						bgcolor: backgroundColorRed
-					}
-				}
-			]
+						bgcolor: backgroundColorRed,
+					},
+				},
+			],
 		})
 
 		presets.push({
@@ -81,43 +81,43 @@ module.exports = {
 				size: '14',
 				color: '16777215',
 				bgcolor: self.rgb(0, 0, 0),
-				latch: true
+				latch: true,
 			},
 			actions: [
 				{
-					action: 'startCountDownTimer'
-				}
+					action: 'startCountDownTimer',
+				},
 			],
 			release_actions: [
 				{
-					action: 'pauseCountDownTimer'
-				}
+					action: 'pauseCountDownTimer',
+				},
 			],
 			feedbacks: [
 				{
 					type: 'timerState',
 					options: {
 						mode: 'countdown',
-						state: 'running'
+						state: 'running',
 					},
 					style: {
 						color: foregroundColor,
-						bgcolor: backgroundColorGreen
-					}
+						bgcolor: backgroundColorGreen,
+					},
 				},
 				{
 					type: 'timerState',
 					options: {
 						mode: 'countdown',
-						state: 'stopped'
+						state: 'stopped',
 					},
 					style: {
 						color: foregroundColor,
-						bgcolor: backgroundColorRed
-					}
-				}
-			]
-		});
+						bgcolor: backgroundColorRed,
+					},
+				},
+			],
+		})
 
 		for (let i = 0; i <= 9; i++) {
 			presets.push({
@@ -128,16 +128,16 @@ module.exports = {
 					text: `EXEC PROG\\n${i}`,
 					size: '14',
 					color: '16777215',
-					bgcolor: self.rgb(0, 0, 0)
+					bgcolor: self.rgb(0, 0, 0),
 				},
 				actions: [
 					{
 						action: 'executeStoredProgram',
 						options: {
-							program: i.toString()
-						}
-					}
-				]
+							program: i.toString(),
+						},
+					},
+				],
 			})
 		}
 
@@ -149,16 +149,16 @@ module.exports = {
 				text: `Close Relay\\n1 sec`,
 				size: '14',
 				color: '16777215',
-				bgcolor: self.rgb(0, 0, 0)
+				bgcolor: self.rgb(0, 0, 0),
 			},
 			actions: [
 				{
 					action: 'relayControl',
 					options: {
-						seconds: '1'
-					}
-				}
-			]
+						seconds: '1',
+					},
+				},
+			],
 		})
 
 		for (let i = 0; i <= 100; i = i + 10) {
@@ -170,17 +170,17 @@ module.exports = {
 					text: `${i}%`,
 					size: '14',
 					color: '16777215',
-					bgcolor: self.rgb(0, 0, 0)
+					bgcolor: self.rgb(0, 0, 0),
 				},
 				actions: [
 					{
 						action: 'displayBrightness',
 						options: {
 							digit: i.toString(),
-							dot: i.toString()
-						}
-					}
-				]
+							dot: i.toString(),
+						},
+					},
+				],
 			})
 		}
 
@@ -200,13 +200,13 @@ module.exports = {
 						action: 'displayColors',
 						options: {
 							color_mmss: self.COLORTABLE[i].id,
-							color_hh: self.COLORTABLE[i].id
-						}
-					}
-				]
+							color_hh: self.COLORTABLE[i].id,
+						},
+					},
+				],
 			})
 		}
-		
-		return presets;
-	}
+
+		return presets
+	},
 }

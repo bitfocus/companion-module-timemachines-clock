@@ -3,8 +3,8 @@ module.exports = {
 	// #### Define Feedbacks ####
 	// ##########################
 	setFeedbacks: function () {
-		let self = this;
-		let feedbacks = {};
+		let self = this
+		let feedbacks = {}
 
 		const foregroundColor = self.rgb(255, 255, 255) // White
 		const backgroundColorRed = self.rgb(255, 0, 0) // Red
@@ -25,8 +25,8 @@ module.exports = {
 					default: 'running',
 					choices: [
 						{ id: 'countup', label: 'Count Up' },
-						{ id: 'countdown', label: 'Count Down' }
-					]
+						{ id: 'countdown', label: 'Count Down' },
+					],
 				},
 				{
 					type: 'dropdown',
@@ -35,19 +35,19 @@ module.exports = {
 					default: 'running',
 					choices: [
 						{ id: 'running', label: 'Running' },
-						{ id: 'stopped', label: 'Stopped' }
-					]
-				}
+						{ id: 'stopped', label: 'Stopped' },
+					],
+				},
 			],
 			callback: function (feedback, bank) {
-				let opt = feedback.options;
+				let opt = feedback.options
 
-				if ((self.DEVICEINFO.displayMode == opt.mode) && (self.DEVICEINFO.timerState == opt.state)) {
-					return true;
+				if (self.DEVICEINFO.displayMode == opt.mode && self.DEVICEINFO.timerState == opt.state) {
+					return true
 				}
 
 				return false
-			}
+			},
 		}
 
 		feedbacks.timerLeft = {
@@ -63,22 +63,22 @@ module.exports = {
 					type: 'textinput',
 					label: 'Number of Seconds Remaining',
 					id: 'seconds',
-					default: '10'
-				}
+					default: '10',
+				},
 			],
 			callback: function (feedback, bank) {
-				let opt = feedback.options;
+				let opt = feedback.options
 
 				if (self.DEVICEINFO.displayMode === 'countdown') {
 					if (parseInt(self.DEVICEINFO.timerSeconds) <= parseInt(opt.seconds)) {
-						return true;
+						return true
 					}
 				}
 
 				return false
-			}
+			},
 		}
 
 		return feedbacks
-	}
+	},
 }
