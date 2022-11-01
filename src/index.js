@@ -255,7 +255,7 @@ instance.prototype.updateData = function (bytes) {
 
 	if (bytes[0] <= 3) {
 		//it's a POE, Wifi, or Dot Matrix model and uses the following bytes structure
-		let name = bytesToAscii(bytes.slice(23)).replaceAll('\x00','');
+		let name = bytesToAscii(bytes.slice(23)).replace(/\\x00/g,'');
 		let firmware = bytes[11] + '.' + bytes[12];
 		let timer = bytes[15].toString().padStart(2, '0') + ':' + bytes[16].toString().padStart(2, '0') + ':' + bytes[17].toString().padStart(2, '0');
 		let timerSeconds = bytes[17].toString();
