@@ -153,12 +153,18 @@ instance.prototype.init_connection = function () {
 
 		self.udp.on('error', (err) => {
 			self.debug('Network error', err)
-			self.status(self.STATE_ERROR, err)
-			self.log('error', 'Network error: ' + err.message)
+			if (self.currentStatus != 2) {
+				self.status(self.STATE_ERROR, err)
+				self.log('error', 'Network error: ' + err.message)
+			}
 		})
 
 		self.udp.on('data', (data) => {
-			self.status(self.STATE_OK)
+			if (self.currentStatus != 0) {
+				this.log('info', 'Connected to a TimeMachines Clock.')
+				self.status(self.STATE_OK)
+			}
+
 			self.CONNECTED = true
 			self.DEVICEINFO.connection = 'Connected'
 			self.setVariable('connection', 'Connected')
@@ -167,7 +173,9 @@ instance.prototype.init_connection = function () {
 				//this is the main settings information
 				self.updateData(Uint8Array.from(data))
 			}
-			self.setupInterval()
+			if (!self.INTERVAL && self.config.interval > 0) {
+				self.setupInterval()
+			}
 		})
 
 		self.getInformation()
@@ -178,8 +186,10 @@ instance.prototype.checkConnection = function () {
 	let self = this
 
 	if (!self.CONNECTED) {
-		self.status(self.STATE_ERROR)
-		self.log('error', 'Failed to receive response from device. Is this the right IP address?')
+		if (self.currentStatus != 2) {
+			self.status(self.STATE_ERROR)
+			self.log('error', 'Failed to receive response from device. Is this the right IP address?')
+		}
 		self.setVariable('connection', 'Error - See Log')
 	}
 }
@@ -191,7 +201,7 @@ instance.prototype.setupInterval = function () {
 
 	if (self.config.interval > 0) {
 		self.INTERVAL = setInterval(self.getInformation.bind(self), self.config.interval)
-		self.log('info', 'Starting Update Interval: Every ' + self.config.interval + 'ms')
+		self.debug(`Starting Update Interval: Every ${self.config.interval}ms`)
 	}
 }
 
@@ -199,7 +209,7 @@ instance.prototype.stopInterval = function () {
 	let self = this
 
 	if (self.INTERVAL !== null) {
-		self.log('info', 'Stopping Update Interval.')
+		self.debug('Stopping Update Interval.')
 		clearInterval(self.INTERVAL)
 		self.INTERVAL = null
 	}
