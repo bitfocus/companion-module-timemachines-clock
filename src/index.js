@@ -39,19 +39,10 @@ class instance extends instance_skel {
 				regex: this.REGEX_IP,
 			},
 			{
-				type: 'text',
-				id: 'intervalInfo',
-				width: 12,
-				label: 'Update Interval',
-				value:
-					'Please enter the amount of time in milliseconds to request new information from the device. Set to 0 to disable.',
-			},
-			{
-				type: 'textinput',
-				id: 'interval',
-				label: 'Update Interval',
-				width: 3,
-				default: 1000,
+				type: 'checkbox',
+				id: 'polling',
+				label: 'Polling (Required for Variables/Feedback)',
+				default: true,
 			},
 		]
 	}
@@ -182,7 +173,7 @@ class instance extends instance_skel {
 					//this is the main settings information
 					this.updateData(Uint8Array.from(data))
 				}
-				if (!this.INTERVAL && this.config.interval > 0) {
+				if (!this.INTERVAL && this.config.polling) {
 					this.setupInterval()
 				}
 			})
@@ -203,9 +194,9 @@ class instance extends instance_skel {
 	setupInterval() {
 		this.stopInterval()
 
-		if (this.config.interval > 0) {
-			this.INTERVAL = setInterval(this.getInformation.bind(this), this.config.interval)
-			this.debug(`Starting Update Interval: Every ${this.config.interval}ms`)
+		if (this.config.polling) {
+			this.INTERVAL = setInterval(this.getInformation.bind(this), 1000)
+			this.debug(`Starting Update Interval: Every 1000ms`)
 		}
 	}
 
@@ -271,12 +262,15 @@ class instance extends instance_skel {
 				bytes[16].toString().padStart(2, '0') +
 				':' +
 				bytes[17].toString().padStart(2, '0')
-			let timerSeconds = bytes[17].toString()
+			let timerHours = parseInt(bytes[15])
+			let timerMinutes = parseInt(bytes[16])
+			let timerSeconds = parseInt(bytes[17])
+			let totalSeconds = timerHours * 120 + timerMinutes * 60 + timerSeconds
 
 			this.DEVICEINFO.name = name
 			this.DEVICEINFO.firmware = firmware
 			this.DEVICEINFO.display = display
-			this.DEVICEINFO.timerSeconds = timerSeconds
+			this.DEVICEINFO.timerSeconds = totalSeconds
 
 			let modeBits = bytes[19].toString(2).padStart(8, '0')
 
@@ -285,8 +279,8 @@ class instance extends instance_skel {
 				this.DEVICEINFO.displayMode = 'timeofday'
 				this.DEVICEINFO.displayModeFriendly = 'Time Of Day'
 
-				this.DEVICEINFO.timerState = ''
-				this.DEVICEINFO.timerStateFriendly = ''
+				this.DEVICEINFO.timerState = 'none'
+				this.DEVICEINFO.timerStateFriendly = 'None'
 			} else {
 				let displayModeBits = modeBits.substring(5)
 
@@ -495,8 +489,8 @@ class instance extends instance_skel {
 	modifyTimerWhileRunning(mode, hours, minutes, seconds) {
 		//used to increase/decrease a timer while it is still running
 
-		if (this.DEVICEINFO.timer.indexOf(':')) {
-			let currentTimerArray = this.DEVICEINFO.timer.split(':')
+		if (this.DEVICEINFO.display?.indexOf(':')) {
+			let currentTimerArray = this.DEVICEINFO.display.split(':')
 
 			let currentHours = parseInt(currentTimerArray[0])
 			let currentMinutes = parseInt(currentTimerArray[1])

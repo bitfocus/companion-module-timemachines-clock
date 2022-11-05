@@ -1,16 +1,16 @@
 {
 	"name": "timemachines-clock",
-	"version": "1.0.2",
+	"version": "1.1",
 	"api_version": "1.0",
 	"keywords": [
 		"clock",
 		"timer"
 	],
-	"manufacturer": "Time Machines Corp",
+	"manufacturer": "TimeMachines",
 	"product": [
 		"Clock"
 	],
-	"shortname": "timemachines-clock",
+	"shortname": "tm-clock",
 	"description": "Companion module for Time Machines Corp Clocks, Displays, and Timers",
 	"main": "src/index.js",
 	"scripts": {

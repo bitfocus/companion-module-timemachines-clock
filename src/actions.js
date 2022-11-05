@@ -1,8 +1,15 @@
 module.exports = {
 	getActions() {
 		let actions = {
+			showTimeOfDay: {
+				label: 'Show Time Of Day',
+				callback: (action) => {
+					this.showTimeOfDay()
+				},
+			},
+
 			countUpTimerMode: {
-				label: 'Set CountUp Timer Mode',
+				label: 'Show Count-Up Timer',
 				options: [
 					{
 						type: 'dropdown',
@@ -21,21 +28,21 @@ module.exports = {
 			},
 
 			startCountUpTimer: {
-				label: 'Start CountUp Timer',
+				label: 'Start Count-Up Timer',
 				callback: (action) => {
 					this.controlCountUpTimer('start')
 				},
 			},
 
 			pauseCountUpTimer: {
-				label: 'Pause CountUp Timer',
+				label: 'Pause Count-Up Timer',
 				callback: (action) => {
 					this.controlCountUpTimer('pause')
 				},
 			},
 
 			resetCountUpTimer: {
-				label: 'Reset CountUp Timer',
+				label: 'Reset Count-Up Timer',
 				options: [
 					{
 						type: 'dropdown',
@@ -53,8 +60,55 @@ module.exports = {
 				},
 			},
 
+			setUpTimerWhileRunning: {
+				label: 'Set Count-Up Timer While Running',
+				options: [
+					{
+						type: 'number',
+						label: 'Hours',
+						id: 'hours',
+						default: 0,
+						min: 0,
+					},
+					{
+						type: 'number',
+						label: 'Minutes',
+						id: 'minutes',
+						default: 30,
+						min: 0,
+						max: 59,
+					},
+					{
+						type: 'number',
+						label: 'Seconds',
+						id: 'seconds',
+						default: 0,
+						min: 0,
+						max: 59,
+					},
+					{
+						type: 'number',
+						label: 'Tenths Of Seconds',
+						id: 'tseconds',
+						default: 0,
+						min: 0,
+					},
+					{
+						type: 'number',
+						label: 'Hundredths Of Seconds',
+						id: 'hseconds',
+						default: 0,
+						min: 0,
+					},
+				],
+				callback: (action) => {
+					let opt = action.options
+					this.setUpTimerWhileRunning(opt.hours, opt.minutes, opt.seconds, opt.tseconds, opt.hseconds)
+				},
+			},
+
 			countDownTimerMode: {
-				label: 'Set CountDown Timer Mode',
+				label: 'Show Countdown Timer',
 				options: [
 					{
 						type: 'dropdown',
@@ -67,29 +121,35 @@ module.exports = {
 						],
 					},
 					{
-						type: 'textinput',
+						type: 'number',
 						label: 'Hours',
 						id: 'hours',
-						default: '0',
+						default: 0,
+						min: 0,
 						isVisible: (action) => action.options.mode == 'sec',
 					},
 					{
-						type: 'textinput',
+						type: 'number',
 						label: 'Minutes',
 						id: 'minutes',
-						default: '30',
+						default: 30,
+						min: 0,
+						max: 59,
 					},
 					{
-						type: 'textinput',
+						type: 'number',
 						label: 'Seconds',
 						id: 'seconds',
-						default: '0',
+						default: 0,
+						min: 0,
+						max: 59,
 					},
 					{
-						type: 'textinput',
+						type: 'number',
 						label: 'Tenths Of Seconds',
 						id: 'tseconds',
-						default: '0',
+						default: 0,
+						min: 0,
 						isVisible: (action) => action.options.mode == 'tsec',
 					},
 					{
@@ -99,10 +159,11 @@ module.exports = {
 						default: false,
 					},
 					{
-						type: 'textinput',
+						type: 'number',
 						label: 'Alarm Duration (in seconds)',
 						id: 'alarmDuration',
-						default: '3',
+						default: 3,
+						min: 1,
 						isVisible: (action) => action.options.alarmEnable == true,
 					},
 				],
@@ -121,21 +182,21 @@ module.exports = {
 			},
 
 			startCountDownTimer: {
-				label: 'Start CountDown Timer',
+				label: 'Start Countdown Timer',
 				callback: (action) => {
 					this.controlCountDownTimer('start')
 				},
 			},
 
 			pauseCountDownTimer: {
-				label: 'Pause CountDown Timer',
+				label: 'Pause Countdown Timer',
 				callback: (action) => {
 					this.controlCountDownTimer('pause')
 				},
 			},
 
 			resetCountDownTimer: {
-				label: 'Reset Count Down Timer',
+				label: 'Reset Countdown Timer',
 				options: [
 					{
 						type: 'dropdown',
@@ -148,29 +209,35 @@ module.exports = {
 						],
 					},
 					{
-						type: 'textinput',
+						type: 'number',
 						label: 'Hours',
 						id: 'hours',
-						default: '0',
+						default: 0,
+						min: 0,
 						isVisible: (action) => action.options.mode == 'sec',
 					},
 					{
-						type: 'textinput',
+						type: 'number',
 						label: 'Minutes',
 						id: 'minutes',
-						default: '30',
+						default: 30,
+						min: 0,
+						max: 59,
 					},
 					{
-						type: 'textinput',
+						type: 'number',
 						label: 'Seconds',
 						id: 'seconds',
-						default: '0',
+						default: 0,
+						min: 0,
+						max: 59,
 					},
 					{
-						type: 'textinput',
+						type: 'number',
 						label: 'Tenths Of Seconds',
 						id: 'tseconds',
-						default: '0',
+						default: 0,
+						min: 0,
 						isVisible: (action) => action.options.mode == 'tsec',
 					},
 					{
@@ -180,10 +247,11 @@ module.exports = {
 						default: false,
 					},
 					{
-						type: 'textinput',
+						type: 'number',
 						label: 'Alarm Duration (in seconds)',
 						id: 'alarmDuration',
-						default: '3',
+						default: 3,
+						min: 1,
 						isVisible: (action) => action.options.alarmEnable == true,
 					},
 				],
@@ -201,85 +269,45 @@ module.exports = {
 				},
 			},
 
-			showTimeOfDay: {
-				label: 'Show Time Of Day on Clock',
-				callback: (action) => {
-					this.showTimeOfDay()
-				},
-			},
-
-			setUpTimerWhileRunning: {
-				label: 'Set Up Timer While Running',
-				options: [
-					{
-						type: 'textinput',
-						label: 'Hours',
-						id: 'hours',
-						default: '0',
-					},
-					{
-						type: 'textinput',
-						label: 'Minutes',
-						id: 'minutes',
-						default: '30',
-					},
-					{
-						type: 'textinput',
-						label: 'Seconds',
-						id: 'seconds',
-						default: '0',
-					},
-					{
-						type: 'textinput',
-						label: 'Tenths Of Seconds',
-						id: 'tseconds',
-						default: '0',
-					},
-					{
-						type: 'textinput',
-						label: 'Hundredths Of Seconds',
-						id: 'hseconds',
-						default: '0',
-					},
-				],
-				callback: (action) => {
-					let opt = action.options
-					this.setUpTimerWhileRunning(opt.hours, opt.minutes, opt.seconds, opt.tseconds, opt.hseconds)
-				},
-			},
-
 			setDownTimerWhileRunning: {
-				label: 'Set Down Timer While Running',
+				label: 'Set Countdown Timer While Running',
 				options: [
 					{
-						type: 'textinput',
+						type: 'number',
 						label: 'Hours',
 						id: 'hours',
-						default: '0',
+						default: 0,
+						min: 0,
 					},
 					{
-						type: 'textinput',
+						type: 'number',
 						label: 'Minutes',
 						id: 'minutes',
-						default: '30',
+						default: 30,
+						min: 0,
+						max: 59,
 					},
 					{
-						type: 'textinput',
+						type: 'number',
 						label: 'Seconds',
 						id: 'seconds',
-						default: '0',
+						default: 0,
+						min: 0,
+						max: 59,
 					},
 					{
-						type: 'textinput',
+						type: 'number',
 						label: 'Tenths Of Seconds',
 						id: 'tseconds',
-						default: '0',
+						default: 0,
+						min: 0,
 					},
 					{
-						type: 'textinput',
+						type: 'number',
 						label: 'Hundredths Of Seconds',
 						id: 'hseconds',
-						default: '0',
+						default: 0,
+						min: 0,
 					},
 				],
 				callback: (action) => {
@@ -292,22 +320,27 @@ module.exports = {
 				label: 'Increase Timer While Running',
 				options: [
 					{
-						type: 'textinput',
+						type: 'number',
 						label: 'Hours',
 						id: 'hours',
-						default: '0',
+						default: 0,
+						min: 0,
 					},
 					{
-						type: 'textinput',
+						type: 'number',
 						label: 'Minutes',
 						id: 'minutes',
-						default: '1',
+						default: 30,
+						min: 0,
+						max: 59,
 					},
 					{
-						type: 'textinput',
+						type: 'number',
 						label: 'Seconds',
 						id: 'seconds',
-						default: '0',
+						default: 0,
+						min: 0,
+						max: 59,
 					},
 				],
 				callback: (action) => {
@@ -320,22 +353,27 @@ module.exports = {
 				label: 'Decrease Timer While Running',
 				options: [
 					{
-						type: 'textinput',
+						type: 'number',
 						label: 'Hours',
 						id: 'hours',
-						default: '0',
+						default: 0,
+						min: 0,
 					},
 					{
-						type: 'textinput',
+						type: 'number',
 						label: 'Minutes',
 						id: 'minutes',
-						default: '1',
+						default: 30,
+						min: 0,
+						max: 59,
 					},
 					{
-						type: 'textinput',
+						type: 'number',
 						label: 'Seconds',
 						id: 'seconds',
-						default: '0',
+						default: 0,
+						min: 0,
+						max: 59,
 					},
 				],
 				callback: (action) => {
@@ -348,22 +386,12 @@ module.exports = {
 				label: 'Execute Stored Program',
 				options: [
 					{
-						type: 'dropdown',
-						label: 'Program Number',
+						type: 'number',
+						label: 'Program Number (0 to 9)',
 						id: 'program',
-						default: '0',
-						choices: [
-							{ id: '0', label: '0' },
-							{ id: '1', label: '1' },
-							{ id: '2', label: '2' },
-							{ id: '3', label: '3' },
-							{ id: '4', label: '4' },
-							{ id: '5', label: '5' },
-							{ id: '6', label: '6' },
-							{ id: '7', label: '7' },
-							{ id: '8', label: '8' },
-							{ id: '9', label: '9' },
-						],
+						default: 0,
+						min: 0,
+						max: 9,
 					},
 				],
 				callback: (action) => {
@@ -375,10 +403,11 @@ module.exports = {
 				label: 'Close Relay',
 				options: [
 					{
-						type: 'textinput',
+						type: 'number',
 						label: 'Seconds to stay Closed',
 						id: 'seconds',
-						default: '1',
+						default: 1,
+						min: 1,
 					},
 				],
 				callback: (action) => {

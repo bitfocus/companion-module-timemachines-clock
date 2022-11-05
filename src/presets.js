@@ -3,15 +3,15 @@ exports.getPresets = function () {
 
 	const ColorWhite = this.rgb(255, 255, 255)
 	const ColorBlack = this.rgb(0, 0, 0)
-	const ColorRed = this.rgb(255, 0, 0)
-	const ColorGreen = this.rgb(0, 255, 0)
+	const ColorRed = this.rgb(200, 0, 0)
+	const ColorGreen = this.rgb(0, 200, 0)
 
 	presets.push({
 		category: 'Clock Display',
 		label: 'Show Timer Value',
 		bank: {
 			style: 'text',
-			text: '$(timemachines-clock:display)',
+			text: '$(tm-clock:display)',
 			size: '14',
 			color: ColorWhite,
 			bgcolor: ColorBlack,
@@ -49,10 +49,10 @@ exports.getPresets = function () {
 
 	presets.push({
 		category: 'Clock Mode',
-		label: 'Show Count Up Timer',
+		label: 'Show Count-Up Timer',
 		bank: {
 			style: 'text',
-			text: 'Show Count Up Timer',
+			text: 'Show Count-Up',
 			size: '14',
 			color: ColorWhite,
 			bgcolor: ColorBlack,
@@ -81,10 +81,10 @@ exports.getPresets = function () {
 
 	presets.push({
 		category: 'Clock Mode',
-		label: 'Show Count Down Timer',
+		label: 'Show Countdown Timer',
 		bank: {
 			style: 'text',
-			text: 'Show Count Down Timer',
+			text: 'Show Count Down',
 			size: '14',
 			color: ColorWhite,
 			bgcolor: ColorBlack,
@@ -94,10 +94,10 @@ exports.getPresets = function () {
 				action: 'countDownTimerMode',
 				options: {
 					mode: 'sec',
-					hours: '0',
-					min: '0',
-					sec: '0',
-					tseconds: '0',
+					hours: 0,
+					min: 0,
+					sec: 0,
+					tseconds: 0,
 					alarmEnable: false,
 				},
 			},
@@ -117,11 +117,11 @@ exports.getPresets = function () {
 	})
 
 	presets.push({
-		category: 'Count Up Timer',
-		label: 'Control Count Up Timer',
+		category: 'Count-Up Timer',
+		label: 'Control Count-Up Timer',
 		bank: {
 			style: 'text',
-			text: '$(timemachines-clock:display)',
+			text: '$(tm-clock:display)',
 			size: '14',
 			color: ColorWhite,
 			bgcolor: ColorBlack,
@@ -164,11 +164,65 @@ exports.getPresets = function () {
 	})
 
 	presets.push({
-		category: 'Count Down Timer',
-		label: 'Control Count Down Timer',
+		category: 'Count-Up Timer',
+		label: 'Start Count-Up Timer',
 		bank: {
 			style: 'text',
-			text: '$(timemachines-clock:display)',
+			text: 'Start Count-Up Timer',
+			size: '14',
+			color: ColorWhite,
+			bgcolor: ColorBlack,
+		},
+		actions: [
+			{
+				action: 'startCountUpTimer',
+			},
+		],
+	})
+
+	presets.push({
+		category: 'Count-Up Timer',
+		label: 'Pause Count-Up Timer',
+		bank: {
+			style: 'text',
+			text: 'Pause Count-Up Timer',
+			size: '14',
+			color: ColorWhite,
+			bgcolor: ColorBlack,
+		},
+		actions: [
+			{
+				action: 'pauseCountUpTimer',
+			},
+		],
+	})
+
+	presets.push({
+		category: 'Count-Up Timer',
+		label: 'Reset Count-Up Timer',
+		bank: {
+			style: 'text',
+			text: 'Reset Count-Up Timer',
+			size: '14',
+			color: ColorWhite,
+			bgcolor: ColorBlack,
+		},
+		actions: [
+			{
+				action: 'resetCountUpTimer',
+				options: {
+					mode: 'sec',
+				},
+			},
+		],
+	})
+
+	presets.push({
+		category: 'Countdown Timer',
+		label: 'Control Countdown Timer',
+		bank: {
+			style: 'text',
+			text: '$(tm-clock:display)',
 			size: '14',
 			color: ColorWhite,
 			bgcolor: ColorBlack,
@@ -210,6 +264,183 @@ exports.getPresets = function () {
 		],
 	})
 
+	presets.push({
+		category: 'Countdown Timer',
+		label: 'Start Countdown Timer',
+		bank: {
+			style: 'text',
+			text: 'Start Count Down',
+			size: '14',
+			color: ColorWhite,
+			bgcolor: ColorBlack,
+		},
+		actions: [
+			{
+				action: 'startCountDownTimer',
+			},
+		],
+	})
+
+	presets.push({
+		category: 'Countdown Timer',
+		label: 'Pause Countdown Timer',
+		bank: {
+			style: 'text',
+			text: 'Pause Count Down',
+			size: '14',
+			color: ColorWhite,
+			bgcolor: ColorBlack,
+		},
+		actions: [
+			{
+				action: 'pauseCountDownTimer',
+			},
+		],
+	})
+
+	presets.push({
+		category: 'Countdown Timer',
+		label: `Start 1m Countdown`,
+		bank: {
+			style: 'text',
+			text: `Start 1m Count Down`,
+			size: '14',
+			color: ColorWhite,
+			bgcolor: ColorBlack,
+		},
+		actions: [
+			{
+				action: 'countDownTimerMode',
+				options: {
+					mode: 'sec',
+					hours: 0,
+					minutes: 1,
+					seconds: 0,
+					tseconds: 0,
+					alarmEnable: false,
+				},
+			},
+		],
+	})
+
+	for (let i = 5; i <= 30; i = i + 5) {
+		presets.push({
+			category: 'Countdown Timer',
+			label: `Start ${[i]}m Countdown`,
+			bank: {
+				style: 'text',
+				text: `Start ${[i]}m Count Down`,
+				size: '14',
+				color: ColorWhite,
+				bgcolor: ColorBlack,
+			},
+			actions: [
+				{
+					action: 'countDownTimerMode',
+					options: {
+						mode: 'sec',
+						hours: 0,
+						minutes: i,
+						seconds: 0,
+						tseconds: 0,
+						alarmEnable: false,
+					},
+				},
+			],
+		})
+	}
+
+	presets.push({
+		category: 'Countdown Timer',
+		label: `Start 1m Countdown`,
+		bank: {
+			style: 'text',
+			text: `Start 1h Count Down`,
+			size: '14',
+			color: ColorWhite,
+			bgcolor: ColorBlack,
+		},
+		actions: [
+			{
+				action: 'countDownTimerMode',
+				options: {
+					mode: 'sec',
+					hours: 1,
+					minutes: 0,
+					seconds: 0,
+					tseconds: 0,
+					alarmEnable: false,
+				},
+			},
+		],
+	})
+
+	presets.push({
+		category: 'Countdown Timer',
+		label: `Add 30s to Timer`,
+		bank: {
+			style: 'text',
+			text: `Add 30s to Timer`,
+			size: '14',
+			color: ColorWhite,
+			bgcolor: ColorBlack,
+		},
+		actions: [
+			{
+				action: 'increaseTimerWhileRunning',
+				options: {
+					hours: 0,
+					minutes: 0,
+					seconds: 30,
+				},
+			},
+		],
+	})
+
+	presets.push({
+		category: 'Countdown Timer',
+		label: `Add 1m to Timer`,
+		bank: {
+			style: 'text',
+			text: `Add 1m to Timer`,
+			size: '14',
+			color: ColorWhite,
+			bgcolor: ColorBlack,
+		},
+		actions: [
+			{
+				action: 'increaseTimerWhileRunning',
+				options: {
+					hours: 0,
+					minutes: 1,
+					seconds: 0,
+				},
+			},
+		],
+	})
+
+	presets.push({
+		category: 'Countdown Timer',
+		label: `Add 5m to Timer`,
+		bank: {
+			style: 'text',
+			text: `Add 5m to Timer`,
+			size: '14',
+			color: ColorWhite,
+			bgcolor: ColorBlack,
+		},
+		actions: [
+			{
+				action: 'increaseTimerWhileRunning',
+				options: {
+					hours: 0,
+					minutes: 5,
+					seconds: 0,
+				},
+			},
+		],
+	})
+
 	for (let i = 0; i <= 9; i++) {
 		presets.push({
 			category: 'Stored Programs',
@@ -225,7 +456,7 @@ exports.getPresets = function () {
 				{
 					action: 'executeStoredProgram',
 					options: {
-						program: i.toString(),
+						program: i,
 					},
 				},
 			],

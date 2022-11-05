@@ -75,24 +75,25 @@ exports.initFeedbacks = function () {
 
 	feedbacks.timerLeft = {
 		type: 'boolean',
-		label: 'Timer Time Left',
-		description: 'Indicate if Timer has X seconds left',
+		label: 'Remaining Seconds on Timer ',
+		description: 'Indicate if Timer has less than the specified number of seconds left',
 		style: {
 			color: foregroundColor,
 			bgcolor: backgroundColorRed,
 		},
 		options: [
 			{
-				type: 'textinput',
+				type: 'number',
 				label: 'Number of Seconds Remaining',
 				id: 'seconds',
-				default: '10',
+				default: 10,
+				min: 0,
 			},
 		],
 		callback: (feedback) => {
 			let opt = feedback.options
 
-			if (this.DEVICEINFO.displayMode === 'countdown') {
+			if (this.DEVICEINFO?.displayMode === 'countdown') {
 				if (parseInt(this.DEVICEINFO.timerSeconds) <= parseInt(opt.seconds)) {
 					return true
 				}
