@@ -1,696 +1,610 @@
-var instance_skel = require('../../../instance_skel')
+const instance_skel = require('../../../instance_skel')
 const udp = require('../../../udp')
 
-var actions = require('./actions.js')
-var presets = require('./presets.js')
-var feedbacks = require('./feedbacks.js')
-var variables = require('./variables.js')
+const actions = require('./actions')
+const presets = require('./presets')
+const { updateVariableDefinitions, checkVariables } = require('./variables')
+const { initFeedbacks } = require('./feedbacks')
 
-var debug
+let debug
+let log
 
-instance.prototype.INTERVAL = null //used to poll the clock every second
-instance.prototype.CONNECTED = false //used for friendly notifying of the user that we have not received data yet
+class instance extends instance_skel {
+	constructor(system, id, config) {
+		super(system, id, config)
 
-instance.prototype.DEVICEINFO = {
-	connection: '(connecting)',
-	model: '',
-	name: '',
-	firmware: '',
-	timer: '00:00:00',
-	displayMode: '',
-	displayModeFriendly: '',
-	timerState: '',
-	timerStateFriendly: '',
-}
-
-instance.prototype.COLORTABLE = [
-	{ id: 'red', label: 'Red', r: 255, g: 0, b: 0 },
-	{ id: 'green', label: 'Green', r: 0, g: 255, b: 0 },
-	{ id: 'blue', label: 'Blue', r: 0, g: 0, b: 255 },
-	{ id: 'cyan', label: 'Cyan', r: 0, g: 255, b: 255 },
-	{ id: 'magenta', label: 'Magenta', r: 255, g: 0, b: 255 },
-	{ id: 'yellow', label: 'Yellow', r: 255, g: 255, b: 0 },
-	{ id: 'white', label: 'White', r: 255, g: 255, b: 255 },
-]
-
-// ########################
-// #### Instance setup ####
-// ########################
-function instance(system, id, config) {
-	let self = this
-
-	// super-constructor
-	instance_skel.apply(this, arguments)
-
-	return self
-}
-
-instance.GetUpgradeScripts = function () {}
-
-// Initalize module
-instance.prototype.init = function () {
-	let self = this
-
-	debug = self.debug
-	log = self.log
-
-	self.status(self.STATUS_WARNING, 'connecting')
-
-	self.init_connection()
-
-	self.init_actions()
-	self.init_feedbacks()
-	self.init_variables()
-	self.init_presets()
-
-	self.checkVariables()
-	self.checkFeedbacks()
-}
-
-// Return config fields for web config
-instance.prototype.config_fields = function () {
-	let self = this
-
-	return [
-		{
-			type: 'text',
-			id: 'info',
-			width: 12,
-			label: 'Information',
-			value: 'This module controls Time Machines Corp Clocks, Displays, and Timers',
-		},
-		{
-			type: 'textinput',
-			id: 'host',
-			label: 'IP Address',
-			width: 4,
-			regex: self.REGEX_IP,
-		},
-		{
-			type: 'text',
-			id: 'intervalInfo',
-			width: 12,
-			label: 'Update Interval',
-			value:
-				'Please enter the amount of time in milliseconds to request new information from the device. Set to 0 to disable.',
-		},
-		{
-			type: 'textinput',
-			id: 'interval',
-			label: 'Update Interval',
-			width: 3,
-			default: 1000,
-		},
-	]
-}
-
-// Update module after a config change
-instance.prototype.updateConfig = function (config) {
-	let self = this
-	self.config = config
-
-	self.status(self.STATUS_WARNING, 'connecting')
-
-	if (self.INTERVAL) {
-		clearInterval(self.INTERVAL)
-		self.INTERVAL = null
-	}
-
-	self.init_connection()
-
-	self.init_actions()
-	self.init_feedbacks()
-	self.init_variables()
-	self.init_presets()
-
-	self.checkVariables()
-	self.checkFeedbacks()
-}
-
-// When module gets deleted
-instance.prototype.destroy = function () {
-	let self = this
-
-	if (self.udp !== undefined) {
-		self.udp.destroy()
-		delete self.udp
-	}
-
-	if (self.INTERVAL) {
-		clearInterval(self.INTERVAL)
-		self.INTERVAL = null
-	}
-
-	debug('destroy', self.id)
-}
-
-instance.prototype.init_connection = function () {
-	let self = this
-
-	if (self.config.host !== undefined) {
-		if (self.udp !== undefined) {
-			self.udp.destroy()
-			delete self.udp
-		}
-
-		self.udp = new udp(self.config.host, 7372)
-		setTimeout(self.checkConnection.bind(this), 10000)
-
-		self.udp.on('error', (err) => {
-			self.debug('Network error', err)
-			if (self.currentStatus != 2) {
-				self.status(self.STATE_ERROR, err)
-				self.log('error', 'Network error: ' + err.message)
-			}
+		Object.assign(this, {
+			...actions,
+			...presets,
 		})
 
-		self.udp.on('data', (data) => {
-			if (self.currentStatus != 0) {
-				this.log('info', 'Connected to a TimeMachines Clock.')
-				self.status(self.STATE_OK)
-			}
-
-			self.CONNECTED = true
-			self.DEVICEINFO.connection = 'Connected'
-			self.setVariable('connection', 'Connected')
-			let hexString = data.toString('hex')
-			if (hexString.length == 80) {
-				//this is the main settings information
-				self.updateData(Uint8Array.from(data))
-			}
-			if (!self.INTERVAL && self.config.interval > 0) {
-				self.setupInterval()
-			}
-		})
-
-		self.getInformation()
+		this.updateVariableDefinitions = updateVariableDefinitions
+		this.checkVariables = checkVariables
 	}
-}
 
-instance.prototype.checkConnection = function () {
-	let self = this
+	config_fields() {
+		return [
+			{
+				type: 'text',
+				id: 'info',
+				width: 12,
+				label: 'Information',
+				value: 'This module controls Time Machines Corp Clocks, Displays, and Timers',
+			},
+			{
+				type: 'textinput',
+				id: 'host',
+				label: 'IP Address',
+				width: 4,
+				regex: this.REGEX_IP,
+			},
+			{
+				type: 'text',
+				id: 'intervalInfo',
+				width: 12,
+				label: 'Update Interval',
+				value:
+					'Please enter the amount of time in milliseconds to request new information from the device. Set to 0 to disable.',
+			},
+			{
+				type: 'textinput',
+				id: 'interval',
+				label: 'Update Interval',
+				width: 3,
+				default: 1000,
+			},
+		]
+	}
 
-	if (!self.CONNECTED) {
-		if (self.currentStatus != 2) {
-			self.status(self.STATE_ERROR)
-			self.log('error', 'Failed to receive response from device. Is this the right IP address?')
+	updateConfig(config) {
+		this.config = config
+
+		this.status(this.STATUS_WARNING, 'connecting')
+
+		if (this.INTERVAL) {
+			clearInterval(this.INTERVAL)
+			this.INTERVAL = null
 		}
-		self.setVariable('connection', 'Error - See Log')
-	}
-}
 
-instance.prototype.setupInterval = function () {
-	let self = this
+		this.initConnection()
 
-	self.stopInterval()
+		this.actions()
+		this.initFeedbacks()
+		this.initVariables()
+		this.initPresets()
 
-	if (self.config.interval > 0) {
-		self.INTERVAL = setInterval(self.getInformation.bind(self), self.config.interval)
-		self.debug(`Starting Update Interval: Every ${self.config.interval}ms`)
-	}
-}
-
-instance.prototype.stopInterval = function () {
-	let self = this
-
-	if (self.INTERVAL !== null) {
-		self.debug('Stopping Update Interval.')
-		clearInterval(self.INTERVAL)
-		self.INTERVAL = null
-	}
-}
-
-instance.prototype.getInformation = function () {
-	//Get all information from Device
-	let self = this
-
-	if (self.udp) {
-		self.udp.send(Buffer.from('A104B2', 'hex'))
-	}
-}
-
-instance.prototype.updateData = function (bytes) {
-	let self = this
-
-	function bytesToAscii(byteArray) {
-		const bytesString = String.fromCharCode(...byteArray)
-		return bytesString
+		this.checkVariables()
+		this.checkFeedbacks()
 	}
 
-	let type = bytes[0]
+	destroy() {
+		if (this.udp !== undefined) {
+			this.udp.destroy()
+			delete this.udp
+		}
 
-	let model = ''
+		if (this.INTERVAL) {
+			clearInterval(this.INTERVAL)
+			this.INTERVAL = null
+		}
 
-	switch (type) {
-		case 1:
-			model = 'POE'
-			break
-		case 2:
-			model = 'Wifi'
-			break
-		case 3:
-			model = 'DotMatrix'
-			break
-		case 4:
-			model = 'TM1000A'
-			self.status(self.STATE_ERROR)
-			self.log('error', 'This model type is not implemented in this module at this time.')
-			self.stopInterval()
-			break
-		case 5:
-			model = 'TM2000A'
-			self.status(self.STATE_ERROR)
-			self.log('error', 'This model type is not implemented in this module at this time.')
-			self.stopInterval()
-			break
+		debug('destroy', this.id)
 	}
 
-	self.DEVICEINFO.model = model
+	init() {
+		debug = this.debug
+		log = this.log
 
-	if (bytes[0] <= 3) {
-		//it's a POE, Wifi, or Dot Matrix model and uses the following bytes structure
-		let name = bytesToAscii(bytes.slice(23)).replace(/\\x00/g, '')
-		let firmware = bytes[11] + '.' + bytes[12]
-		let timer =
-			bytes[15].toString().padStart(2, '0') +
-			':' +
-			bytes[16].toString().padStart(2, '0') +
-			':' +
-			bytes[17].toString().padStart(2, '0')
-		let timerSeconds = bytes[17].toString()
+		this.status(this.STATUS_WARNING, 'Connecting')
 
-		self.DEVICEINFO.name = name
-		self.DEVICEINFO.firmware = firmware
-		self.DEVICEINFO.timer = timer
-		self.DEVICEINFO.timerSeconds = timerSeconds
+		this.INTERVAL = null //used to poll the clock every second
+		this.CONNECTED = false //used for friendly notifying of the user that we have not received data yet
 
-		let modeBits = bytes[19].toString(2).padStart(8, '0')
+		this.DEVICEINFO = {
+			connection: '(Connecting)',
+			model: '',
+			name: '',
+			firmware: '',
+			display: '00:00:00',
+			displayMode: '',
+			displayModeFriendly: '',
+			timerState: '',
+			timerStateFriendly: '',
+		}
 
-		if (modeBits === '00000000') {
-			//time mode
-			self.DEVICEINFO.displayMode = 'timeofday'
-			self.DEVICEINFO.displayModeFriendly = 'Time Of Day'
+		this.COLORTABLE = [
+			{ id: 'red', label: 'Red', r: 255, g: 0, b: 0 },
+			{ id: 'green', label: 'Green', r: 0, g: 255, b: 0 },
+			{ id: 'blue', label: 'Blue', r: 0, g: 0, b: 255 },
+			{ id: 'cyan', label: 'Cyan', r: 0, g: 255, b: 255 },
+			{ id: 'magenta', label: 'Magenta', r: 255, g: 0, b: 255 },
+			{ id: 'yellow', label: 'Yellow', r: 255, g: 255, b: 0 },
+			{ id: 'white', label: 'White', r: 255, g: 255, b: 255 },
+		]
 
-			self.DEVICEINFO.timerState = ''
-			self.DEVICEINFO.timerStateFriendly = ''
-		} else {
-			let displayModeBits = modeBits.substring(5)
+		this.initConnection()
 
-			if (displayModeBits == '001') {
-				self.DEVICEINFO.displayMode = 'countup'
-				self.DEVICEINFO.displayModeFriendly = 'Count Up'
-			} else if (displayModeBits == '010') {
-				self.DEVICEINFO.displayMode = 'countdown'
-				self.DEVICEINFO.displayModeFriendly = 'Count Down'
-			} else if (displayModeBits == '011') {
-				self.DEVICEINFO.displayMode = 'interval_countup'
-				self.DEVICEINFO.displayModeFriendly = 'Interval Count Up'
-			} else if (displayModeBits == '100') {
-				self.DEVICEINFO.displayMode = 'interval_countdown'
-				self.DEVICEINFO.displayModeFriendly = 'Interval Count Down'
+		this.actions()
+		this.initFeedbacks()
+		this.initVariables()
+		this.initPresets()
+
+		this.checkVariables()
+		this.checkFeedbacks()
+	}
+
+	initVariables() {
+		this.updateVariableDefinitions()
+	}
+
+	initFeedbacks() {
+		const feedbacks = initFeedbacks.bind(this)()
+		this.setFeedbackDefinitions(feedbacks)
+	}
+
+	initPresets() {
+		this.setPresetDefinitions(this.getPresets())
+	}
+
+	actions() {
+		this.setActions(this.getActions())
+	}
+
+	initConnection() {
+		if (this.config.host !== undefined) {
+			if (this.udp !== undefined) {
+				this.udp.destroy()
+				delete this.udp
+			}
+
+			this.udp = new udp(this.config.host, 7372)
+			setTimeout(this.checkConnection.bind(this), 10000)
+
+			this.udp.on('error', (err) => {
+				this.debug('Network error', err)
+				if (this.currentStatus != 2) {
+					this.status(this.STATE_ERROR, err)
+					this.log('error', 'Network error: ' + err.message)
+				}
+			})
+
+			this.udp.on('data', (data) => {
+				if (this.currentStatus != 0) {
+					this.log('info', 'Connected to a TimeMachines Clock.')
+					this.status(this.STATE_OK)
+				}
+
+				this.CONNECTED = true
+				this.DEVICEINFO.connection = 'Connected'
+				this.setVariable('connection', 'Connected')
+				let hexString = data.toString('hex')
+				if (hexString.length == 80) {
+					//this is the main settings information
+					this.updateData(Uint8Array.from(data))
+				}
+				if (!this.INTERVAL && this.config.interval > 0) {
+					this.setupInterval()
+				}
+			})
+
+			this.getInformation()
+		}
+	}
+
+	checkConnection() {
+		if (!this.CONNECTED) {
+			if (this.currentStatus != 2) {
+				this.status(this.STATE_ERROR)
+				this.log('error', 'Failed to receive response from device. Is this the right IP address?')
+			}
+			this.setVariable('connection', 'Error - See Log')
+		}
+	}
+	setupInterval() {
+		this.stopInterval()
+
+		if (this.config.interval > 0) {
+			this.INTERVAL = setInterval(this.getInformation.bind(this), this.config.interval)
+			this.debug(`Starting Update Interval: Every ${this.config.interval}ms`)
+		}
+	}
+
+	stopInterval() {
+		if (this.INTERVAL !== null) {
+			this.debug('Stopping Update Interval.')
+			clearInterval(this.INTERVAL)
+			this.INTERVAL = null
+		}
+	}
+
+	getInformation() {
+		//Get all information from Device
+
+		if (this.udp) {
+			this.udp.send(Buffer.from('A104B2', 'hex'))
+		}
+	}
+
+	updateData(bytes) {
+		function bytesToAscii(byteArray) {
+			const bytesString = String.fromCharCode(...byteArray)
+			return bytesString
+		}
+
+		let type = bytes[0]
+
+		let model = ''
+
+		switch (type) {
+			case 1:
+				model = 'POE'
+				break
+			case 2:
+				model = 'Wifi'
+				break
+			case 3:
+				model = 'DotMatrix'
+				break
+			case 4:
+				model = 'TM1000A'
+				this.status(this.STATE_ERROR)
+				this.log('error', 'This model type is not implemented in this module at this time.')
+				this.stopInterval()
+				break
+			case 5:
+				model = 'TM2000A'
+				this.status(this.STATE_ERROR)
+				this.log('error', 'This model type is not implemented in this module at this time.')
+				this.stopInterval()
+				break
+		}
+
+		this.DEVICEINFO.model = model
+
+		if (bytes[0] <= 3) {
+			//it's a POE, Wifi, or Dot Matrix model and uses the following bytes structure
+			let name = bytesToAscii(bytes.slice(23)).replace(/\\x00/g, '')
+			let firmware = bytes[11] + '.' + bytes[12]
+			let display =
+				bytes[15].toString().padStart(2, '0') +
+				':' +
+				bytes[16].toString().padStart(2, '0') +
+				':' +
+				bytes[17].toString().padStart(2, '0')
+			let timerSeconds = bytes[17].toString()
+
+			this.DEVICEINFO.name = name
+			this.DEVICEINFO.firmware = firmware
+			this.DEVICEINFO.display = display
+			this.DEVICEINFO.timerSeconds = timerSeconds
+
+			let modeBits = bytes[19].toString(2).padStart(8, '0')
+
+			if (modeBits === '00000000') {
+				//time mode
+				this.DEVICEINFO.displayMode = 'timeofday'
+				this.DEVICEINFO.displayModeFriendly = 'Time Of Day'
+
+				this.DEVICEINFO.timerState = ''
+				this.DEVICEINFO.timerStateFriendly = ''
 			} else {
-				self.DEVICEINFO.displayMode = 'unknown'
-				self.DEVICEINFO.displayModeFriendly = 'Unknown'
-			}
+				let displayModeBits = modeBits.substring(5)
 
-			let stateBits = modeBits.substring(1, 2)
-			if (stateBits === '1') {
-				self.DEVICEINFO.timerState = 'running'
-				self.DEVICEINFO.timerStateFriendly = 'Running'
-			} else {
-				self.DEVICEINFO.timerState = 'stopped'
-				self.DEVICEINFO.timerStateFriendly = 'Stopped'
-			}
-		}
-	}
+				if (displayModeBits == '001') {
+					this.DEVICEINFO.displayMode = 'countup'
+					this.DEVICEINFO.displayModeFriendly = 'Count Up'
+				} else if (displayModeBits == '010') {
+					this.DEVICEINFO.displayMode = 'countdown'
+					this.DEVICEINFO.displayModeFriendly = 'Count Down'
+				} else if (displayModeBits == '011') {
+					this.DEVICEINFO.displayMode = 'interval_countup'
+					this.DEVICEINFO.displayModeFriendly = 'Interval Count Up'
+				} else if (displayModeBits == '100') {
+					this.DEVICEINFO.displayMode = 'interval_countdown'
+					this.DEVICEINFO.displayModeFriendly = 'Interval Count Down'
+				} else {
+					this.DEVICEINFO.displayMode = 'unknown'
+					this.DEVICEINFO.displayModeFriendly = 'Unknown'
+				}
 
-	self.checkFeedbacks()
-	self.checkVariables()
-}
-
-// ##########################
-// #### Instance Presets ####
-// ##########################
-instance.prototype.init_presets = function () {
-	this.setPresetDefinitions(presets.setPresets.bind(this)())
-}
-
-// ############################
-// #### Instance Variables ####
-// ############################
-instance.prototype.init_variables = function () {
-	this.setVariableDefinitions(variables.setVariables.bind(this)())
-}
-
-// Setup Initial Values
-instance.prototype.checkVariables = function () {
-	variables.checkVariables.bind(this)()
-}
-
-// ############################
-// #### Instance Feedbacks ####
-// ############################
-instance.prototype.init_feedbacks = function (system) {
-	this.setFeedbackDefinitions(feedbacks.setFeedbacks.bind(this)())
-}
-
-// ##########################
-// #### Instance Actions ####
-// ##########################
-instance.prototype.init_actions = function (system) {
-	this.setActions(actions.setActions.bind(this)())
-}
-
-instance.prototype.setCountUpTimerMode = function (mode) {
-	let self = this
-
-	let hexstring = ''
-
-	switch (mode) {
-		case 'sec':
-			hexstring = 'A20100'
-			break
-		case 'tsec':
-			hexstring = 'A20000'
-			break
-	}
-
-	if (hexstring !== '') {
-		self.udp.send(Buffer.from(hexstring, 'hex'))
-	}
-
-	self.DEVICEINFO.timerMode = 'up'
-}
-
-instance.prototype.controlCountUpTimer = function (command) {
-	let self = this
-
-	let hexstring = ''
-
-	switch (command) {
-		case 'pause':
-			hexstring = 'A30000'
-			break
-		case 'start':
-			hexstring = 'A30100'
-			break
-	}
-
-	if (hexstring !== '') {
-		self.udp.send(Buffer.from(hexstring, 'hex'))
-	}
-
-	self.DEVICEINFO.timerState = command
-}
-
-instance.prototype.resetCountUpTimer = function (mode) {
-	let self = this
-
-	let hexstring = ''
-
-	switch (mode) {
-		case 'sec':
-			hexstring = 'A40100'
-			break
-		case 'tsec':
-			hexstring = 'A40000'
-			break
-	}
-
-	if (hexstring !== '') {
-		self.udp.send(Buffer.from(hexstring, 'hex'))
-	}
-}
-
-instance.prototype.setCountDownTimerMode = function (
-	mode,
-	hours,
-	minutes,
-	seconds,
-	tseconds,
-	alarmEnable,
-	alarmDuration
-) {
-	let self = this
-
-	let hexstring = ''
-
-	switch (mode) {
-		case 'sec':
-			hexstring = 'A501'
-			break
-		case 'tsec':
-			hexstring = 'A500'
-			break
-	}
-
-	hexstring += parseInt(hours).toString(16).padStart(2, '0')
-	hexstring += parseInt(minutes).toString(16).padStart(2, '0')
-	hexstring += parseInt(seconds).toString(16).padStart(2, '0')
-	hexstring += parseInt(tseconds).toString(16).padStart(2, '0')
-
-	if (alarmEnable) {
-		hexstring += parseInt(1).toString(16).padStart(2, '0')
-		hexstring += parseInt(alarmDuration).toString(16).padStart(2, '0')
-	} else {
-		hexstring += parseInt(0).toString(16).padStart(2, '0')
-		hexstring += parseInt(0).toString(16).padStart(2, '0')
-	}
-
-	if (hexstring !== '') {
-		self.udp.send(Buffer.from(hexstring, 'hex'))
-	}
-
-	self.DEVICEINFO.timerMode = 'down'
-}
-
-instance.prototype.controlCountDownTimer = function (command) {
-	let self = this
-
-	let hexstring = ''
-
-	switch (command) {
-		case 'pause':
-			hexstring = 'A60000'
-			break
-		case 'start':
-			hexstring = 'A60100'
-			break
-	}
-
-	if (hexstring !== '') {
-		self.udp.send(Buffer.from(hexstring, 'hex'))
-	}
-
-	self.DEVICEINFO.timerState = command
-}
-
-instance.prototype.resetCountDownTimer = function (
-	mode,
-	hours,
-	minutes,
-	seconds,
-	tseconds,
-	alarmEnable,
-	alarmDuration
-) {
-	let self = this
-
-	let hexstring = ''
-
-	switch (mode) {
-		case 'sec':
-			hexstring = 'A701'
-			hexstring += parseInt(hours).toString(16).padStart(2, '0')
-			hexstring += parseInt(minutes).toString(16).padStart(2, '0')
-			hexstring += parseInt(seconds).toString(16).padStart(2, '0')
-			break
-		case 'tsec':
-			hexstring = 'A700'
-			hexstring += parseInt(minutes).toString(16).padStart(2, '0')
-			hexstring += parseInt(seconds).toString(16).padStart(2, '0')
-			hexstring += parseInt(tseconds).toString(16).padStart(2, '0')
-			break
-	}
-
-	if (alarmEnable) {
-		hexstring += parseInt(1).toString(16).padStart(2, '0')
-		hexstring += parseInt(alarmDuration).toString(16).padStart(2, '0')
-	} else {
-		hexstring += parseInt(0).toString(16).padStart(2, '0')
-		hexstring += parseInt(0).toString(16).padStart(2, '0')
-	}
-
-	if (hexstring !== '') {
-		self.udp.send(Buffer.from(hexstring, 'hex'))
-	}
-}
-
-instance.prototype.showTimeOfDay = function () {
-	let self = this
-
-	self.udp.send(Buffer.from('A80100', 'hex'))
-
-	self.DEVICEINFO.timerMode = 'tod'
-}
-
-instance.prototype.setUpTimerWhileRunning = function (hours, minutes, seconds, tseconds, hseconds) {
-	let self = this
-
-	let hexstring = 'AA'
-
-	hexstring += parseInt(hours).toString(16).padStart(2, '0')
-	hexstring += parseInt(minutes).toString(16).padStart(2, '0')
-	hexstring += parseInt(seconds).toString(16).padStart(2, '0')
-	hexstring += parseInt(tseconds).toString(16).padStart(2, '0')
-	hexstring += parseInt(hseconds).toString(16).padStart(2, '0')
-
-	if (hexstring !== '') {
-		self.udp.send(Buffer.from(hexstring, 'hex'))
-	}
-}
-
-instance.prototype.setDownTimerWhileRunning = function (hours, minutes, seconds, tseconds, hseconds) {
-	let self = this
-
-	let hexstring = 'AB'
-
-	hexstring += parseInt(hours).toString(16).padStart(2, '0')
-	hexstring += parseInt(minutes).toString(16).padStart(2, '0')
-	hexstring += parseInt(seconds).toString(16).padStart(2, '0')
-	hexstring += parseInt(tseconds).toString(16).padStart(2, '0')
-	hexstring += parseInt(hseconds).toString(16).padStart(2, '0')
-
-	if (hexstring !== '') {
-		self.udp.send(Buffer.from(hexstring, 'hex'))
-	}
-}
-
-instance.prototype.modifyTimerWhileRunning = function (mode, hours, minutes, seconds) {
-	//used to increase/decrease a timer while it is still running
-	let self = this
-
-	if (self.DEVICEINFO.timer.indexOf(':')) {
-		let currentTimerArray = self.DEVICEINFO.timer.split(':')
-
-		let currentHours = parseInt(currentTimerArray[0])
-		let currentMinutes = parseInt(currentTimerArray[1])
-		let currentSeconds = parseInt(currentTimerArray[2])
-
-		let newHours = currentHours
-		let newMinutes = currentMinutes
-		let newSeconds = currentSeconds
-
-		if (mode == 'increase') {
-			newHours = currentHours + parseInt(hours)
-			newMinutes = currentMinutes + parseInt(minutes)
-			newSeconds = currentSeconds + parseInt(seconds)
-
-			if (newSeconds > 59) {
-				newMinutes++
-				newSeconds = 0
-			}
-
-			if (newMinutes > 59) {
-				newHours++
-				newMinutes = 0
-			}
-		} else if (mode == 'decrease') {
-			newHours = currentHours - parseInt(hours)
-			newMinutes = currentMinutes - parseInt(minutes)
-			newSeconds = currentSeconds - parseInt(seconds)
-
-			if (newSeconds < 0) {
-				newMinutes--
-				newSeconds = 59
-			}
-
-			if (newMinutes < 0) {
-				newHours--
-				newMinutes = 59
+				let stateBits = modeBits.substring(1, 2)
+				if (stateBits === '1') {
+					this.DEVICEINFO.timerState = 'running'
+					this.DEVICEINFO.timerStateFriendly = 'Running'
+				} else {
+					this.DEVICEINFO.timerState = 'stopped'
+					this.DEVICEINFO.timerStateFriendly = 'Stopped'
+				}
 			}
 		}
 
-		if (self.DEVICEINFO.timerMode == 'up' || self.DEVICEINFO.displayMode == 'countup') {
-			self.setUpTimerWhileRunning(newHours, newMinutes, newSeconds, 0, 0)
-		} else if (self.DEVICEINFO.timerMode == 'down' || self.DEVICEINFO.displayMode == 'countdown') {
-			self.setDownTimerWhileRunning(newHours, newMinutes, newSeconds, 0, 0)
+		this.checkFeedbacks()
+		this.checkVariables()
+	}
+	setCountUpTimerMode(mode) {
+		let hexstring = ''
+
+		switch (mode) {
+			case 'sec':
+				hexstring = 'A20100'
+				break
+			case 'tsec':
+				hexstring = 'A20000'
+				break
+		}
+
+		if (hexstring !== '') {
+			this.udp.send(Buffer.from(hexstring, 'hex'))
+		}
+
+		this.DEVICEINFO.timerMode = 'up'
+	}
+
+	controlCountUpTimer(command) {
+		let hexstring = ''
+
+		switch (command) {
+			case 'pause':
+				hexstring = 'A30000'
+				break
+			case 'start':
+				hexstring = 'A30100'
+				break
+		}
+
+		if (hexstring !== '') {
+			this.udp.send(Buffer.from(hexstring, 'hex'))
+		}
+
+		this.DEVICEINFO.timerState = command
+	}
+
+	resetCountUpTimer(mode) {
+		let hexstring = ''
+
+		switch (mode) {
+			case 'sec':
+				hexstring = 'A40100'
+				break
+			case 'tsec':
+				hexstring = 'A40000'
+				break
+		}
+
+		if (hexstring !== '') {
+			this.udp.send(Buffer.from(hexstring, 'hex'))
+		}
+	}
+
+	setCountDownTimerMode(mode, hours, minutes, seconds, tseconds, alarmEnable, alarmDuration) {
+		let hexstring = ''
+
+		switch (mode) {
+			case 'sec':
+				hexstring = 'A501'
+				break
+			case 'tsec':
+				hexstring = 'A500'
+				break
+		}
+
+		hexstring += parseInt(hours).toString(16).padStart(2, '0')
+		hexstring += parseInt(minutes).toString(16).padStart(2, '0')
+		hexstring += parseInt(seconds).toString(16).padStart(2, '0')
+		hexstring += parseInt(tseconds).toString(16).padStart(2, '0')
+
+		if (alarmEnable) {
+			hexstring += parseInt(1).toString(16).padStart(2, '0')
+			hexstring += parseInt(alarmDuration).toString(16).padStart(2, '0')
 		} else {
-			self.log('warn', 'Unable to modify Timer: Clock not in Up/Down Timer mode.')
+			hexstring += parseInt(0).toString(16).padStart(2, '0')
+			hexstring += parseInt(0).toString(16).padStart(2, '0')
 		}
-	} else {
-		self.log('warn', 'Unable to modify Timer: No Current Time Data Available. Is there a Timer running?')
-	}
-}
 
-instance.prototype.executeStoredProgram = function (program) {
-	let self = this
+		if (hexstring !== '') {
+			this.udp.send(Buffer.from(hexstring, 'hex'))
+		}
 
-	let hexstring = 'B8'
-
-	hexstring += parseInt(program).toString(16).padStart(2, '0')
-
-	if (hexstring !== '') {
-		self.udp.send(Buffer.from(hexstring, 'hex'))
-	}
-}
-
-instance.prototype.controlRelay = function (seconds) {
-	let self = this
-
-	let hexstring = 'B4'
-
-	hexstring += parseInt(seconds).toString(16).padStart(2, '0')
-
-	self.udp.send(Buffer.from(hexstring, 'hex'))
-}
-
-instance.prototype.setDisplayBrightness = function (digit, dot) {
-	let self = this
-
-	let hexstring = ''
-
-	dig_bright_hex = parseInt(digit).toString(16).padStart(2, '0')
-	dot_bright_hex = parseInt(dot).toString(16).padStart(2, '0')
-
-	hexstring = 'B5' + dig_bright_hex + dot_bright_hex
-
-	self.udp.send(Buffer.from(hexstring, 'hex'))
-}
-
-instance.prototype.setDisplayColor = function (color_mmss, color_hh) {
-	let self = this
-
-	let hexstring = ''
-
-	let mmss_r_hex = '00'
-	let mmss_g_hex = '00'
-	let mmss_b_hex = '00'
-
-	let hh_r_hex = '00'
-	let hh_g_hex = '00'
-	let hh_b_hex = '00'
-
-	let color_mmss_obj = self.COLORTABLE.find((CLR) => CLR.id == color_mmss)
-
-	if (color_mmss_obj) {
-		mmss_r_hex = parseInt(color_mmss_obj.r).toString(16).padStart(2, '0')
-		mmss_g_hex = parseInt(color_mmss_obj.g).toString(16).padStart(2, '0')
-		mmss_b_hex = parseInt(color_mmss_obj.b).toString(16).padStart(2, '0')
+		this.DEVICEINFO.timerMode = 'down'
 	}
 
-	let color_hh_obj = self.COLORTABLE.find((CLR) => CLR.id == color_hh)
+	controlCountDownTimer(command) {
+		let hexstring = ''
 
-	if (color_hh_obj) {
-		hh_r_hex = parseInt(color_hh_obj.r).toString(16).padStart(2, '0')
-		hh_g_hex = parseInt(color_hh_obj.g).toString(16).padStart(2, '0')
-		hh_b_hex = parseInt(color_hh_obj.b).toString(16).padStart(2, '0')
+		switch (command) {
+			case 'pause':
+				hexstring = 'A60000'
+				break
+			case 'start':
+				hexstring = 'A60100'
+				break
+		}
+
+		if (hexstring !== '') {
+			this.udp.send(Buffer.from(hexstring, 'hex'))
+		}
+
+		this.DEVICEINFO.timerState = command
 	}
 
-	hexstring = 'B6' + mmss_r_hex + mmss_g_hex + mmss_b_hex + hh_r_hex + hh_g_hex + hh_b_hex
+	resetCountDownTimer(mode, hours, minutes, seconds, tseconds, alarmEnable, alarmDuration) {
+		let hexstring = ''
 
-	self.udp.send(Buffer.from(hexstring, 'hex'))
+		switch (mode) {
+			case 'sec':
+				hexstring = 'A701'
+				hexstring += parseInt(hours).toString(16).padStart(2, '0')
+				hexstring += parseInt(minutes).toString(16).padStart(2, '0')
+				hexstring += parseInt(seconds).toString(16).padStart(2, '0')
+				break
+			case 'tsec':
+				hexstring = 'A700'
+				hexstring += parseInt(minutes).toString(16).padStart(2, '0')
+				hexstring += parseInt(seconds).toString(16).padStart(2, '0')
+				hexstring += parseInt(tseconds).toString(16).padStart(2, '0')
+				break
+		}
+
+		if (alarmEnable) {
+			hexstring += parseInt(1).toString(16).padStart(2, '0')
+			hexstring += parseInt(alarmDuration).toString(16).padStart(2, '0')
+		} else {
+			hexstring += parseInt(0).toString(16).padStart(2, '0')
+			hexstring += parseInt(0).toString(16).padStart(2, '0')
+		}
+
+		if (hexstring !== '') {
+			this.udp.send(Buffer.from(hexstring, 'hex'))
+		}
+	}
+
+	showTimeOfDay() {
+		this.udp.send(Buffer.from('A80100', 'hex'))
+
+		this.DEVICEINFO.timerMode = 'tod'
+	}
+
+	setUpTimerWhileRunning(hours, minutes, seconds, tseconds, hseconds) {
+		let hexstring = 'AA'
+
+		hexstring += parseInt(hours).toString(16).padStart(2, '0')
+		hexstring += parseInt(minutes).toString(16).padStart(2, '0')
+		hexstring += parseInt(seconds).toString(16).padStart(2, '0')
+		hexstring += parseInt(tseconds).toString(16).padStart(2, '0')
+		hexstring += parseInt(hseconds).toString(16).padStart(2, '0')
+
+		if (hexstring !== '') {
+			this.udp.send(Buffer.from(hexstring, 'hex'))
+		}
+	}
+
+	setDownTimerWhileRunning(hours, minutes, seconds, tseconds, hseconds) {
+		let hexstring = 'AB'
+
+		hexstring += parseInt(hours).toString(16).padStart(2, '0')
+		hexstring += parseInt(minutes).toString(16).padStart(2, '0')
+		hexstring += parseInt(seconds).toString(16).padStart(2, '0')
+		hexstring += parseInt(tseconds).toString(16).padStart(2, '0')
+		hexstring += parseInt(hseconds).toString(16).padStart(2, '0')
+
+		if (hexstring !== '') {
+			this.udp.send(Buffer.from(hexstring, 'hex'))
+		}
+	}
+
+	modifyTimerWhileRunning(mode, hours, minutes, seconds) {
+		//used to increase/decrease a timer while it is still running
+
+		if (this.DEVICEINFO.timer.indexOf(':')) {
+			let currentTimerArray = this.DEVICEINFO.timer.split(':')
+
+			let currentHours = parseInt(currentTimerArray[0])
+			let currentMinutes = parseInt(currentTimerArray[1])
+			let currentSeconds = parseInt(currentTimerArray[2])
+
+			let newHours = currentHours
+			let newMinutes = currentMinutes
+			let newSeconds = currentSeconds
+
+			if (mode == 'increase') {
+				newHours = currentHours + parseInt(hours)
+				newMinutes = currentMinutes + parseInt(minutes)
+				newSeconds = currentSeconds + parseInt(seconds)
+
+				if (newSeconds > 59) {
+					newMinutes++
+					newSeconds = 0
+				}
+
+				if (newMinutes > 59) {
+					newHours++
+					newMinutes = 0
+				}
+			} else if (mode == 'decrease') {
+				newHours = currentHours - parseInt(hours)
+				newMinutes = currentMinutes - parseInt(minutes)
+				newSeconds = currentSeconds - parseInt(seconds)
+
+				if (newSeconds < 0) {
+					newMinutes--
+					newSeconds = 59
+				}
+
+				if (newMinutes < 0) {
+					newHours--
+					newMinutes = 59
+				}
+			}
+
+			if (this.DEVICEINFO.timerMode == 'up' || this.DEVICEINFO.displayMode == 'countup') {
+				this.setUpTimerWhileRunning(newHours, newMinutes, newSeconds, 0, 0)
+			} else if (this.DEVICEINFO.timerMode == 'down' || this.DEVICEINFO.displayMode == 'countdown') {
+				this.setDownTimerWhileRunning(newHours, newMinutes, newSeconds, 0, 0)
+			} else {
+				this.log('warn', 'Unable to modify Timer: Clock not in Up/Down Timer mode.')
+			}
+		} else {
+			this.log('warn', 'Unable to modify Timer: No Current Time Data Available. Is there a Timer running?')
+		}
+	}
+
+	executeStoredProgram(program) {
+		let hexstring = 'B8'
+
+		hexstring += parseInt(program).toString(16).padStart(2, '0')
+
+		if (hexstring !== '') {
+			this.udp.send(Buffer.from(hexstring, 'hex'))
+		}
+	}
+	controlRelay(seconds) {
+		let hexstring = 'B4'
+
+		hexstring += parseInt(seconds).toString(16).padStart(2, '0')
+
+		this.udp.send(Buffer.from(hexstring, 'hex'))
+	}
+
+	setDisplayBrightness(digit, dot) {
+		let hexstring = ''
+
+		let dig_bright_hex = parseInt(digit).toString(16).padStart(2, '0')
+		let dot_bright_hex = parseInt(dot).toString(16).padStart(2, '0')
+
+		hexstring = 'B5' + dig_bright_hex + dot_bright_hex
+
+		this.udp.send(Buffer.from(hexstring, 'hex'))
+	}
+	setDisplayColor(color_mmss, color_hh) {
+		let hexstring = ''
+
+		let mmss_r_hex = '00'
+		let mmss_g_hex = '00'
+		let mmss_b_hex = '00'
+
+		let hh_r_hex = '00'
+		let hh_g_hex = '00'
+		let hh_b_hex = '00'
+
+		let color_mmss_obj = this.COLORTABLE.find((CLR) => CLR.id == color_mmss)
+
+		if (color_mmss_obj) {
+			mmss_r_hex = parseInt(color_mmss_obj.r).toString(16).padStart(2, '0')
+			mmss_g_hex = parseInt(color_mmss_obj.g).toString(16).padStart(2, '0')
+			mmss_b_hex = parseInt(color_mmss_obj.b).toString(16).padStart(2, '0')
+		}
+
+		let color_hh_obj = this.COLORTABLE.find((CLR) => CLR.id == color_hh)
+
+		if (color_hh_obj) {
+			hh_r_hex = parseInt(color_hh_obj.r).toString(16).padStart(2, '0')
+			hh_g_hex = parseInt(color_hh_obj.g).toString(16).padStart(2, '0')
+			hh_b_hex = parseInt(color_hh_obj.b).toString(16).padStart(2, '0')
+		}
+
+		hexstring = 'B6' + mmss_r_hex + mmss_g_hex + mmss_b_hex + hh_r_hex + hh_g_hex + hh_b_hex
+
+		this.udp.send(Buffer.from(hexstring, 'hex'))
+	}
 }
-
-instance_skel.extendedBy(instance)
 exports = module.exports = instance

@@ -17,6 +17,9 @@
 		"test": "echo \"Error: no test specified\" && exit 1"
 	},
 	"author": "Joseph Adams <josephdadams@gmail.com>",
+	"contributors": [
+		"Bryce Seifert"
+	],
 	"license": "MIT",
 	"homepage": "https://github.com/bitfocus/companion-module-timemachines-clock#readme",
 	"bugs": {
