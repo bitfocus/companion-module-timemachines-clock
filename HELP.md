@@ -1,6 +1,6 @@
-# Time Machines Corp Clocks, Displays, and Timers
+# TimeMachines Clocks
 
-This module controls Time Machines Corp Clocks, Displays, and Timers.
+This module controls clocks from [TimeMachines](https://timemachinescorp.com).
 
 ### Actions
 
@@ -21,18 +21,20 @@ This module controls Time Machines Corp Clocks, Displays, and Timers.
 - Model
 - Unit Name
 - Firmware Version
-- Time On Clock
+- Current Display on Clock (Current Time or Remaining Time on Timer)
 - Display Mode (Time of Day, Count Up, Count Down)
 - Timer State
 
 ### Feedbacks
 
-- Timer is in X State (Count Up, Count Down) (Running, Stopped)
-- Timer has X seconds left (Count Down Mode Only)
+- Dispaly Mode (Time of Day, Count Up, Count Down)
+- Timer State (Count Up, Count Down) (Running, Stopped)
+- Remaining Seconds on Timer
 
 ### Presets
 
-- Show Clock Time Value on Button
+- Clock Dispaly
+- Clock Mode
 - Start/Pause Count Up Timer
 - Start/Pause Count Down Timer
 - Execute Stored Programs

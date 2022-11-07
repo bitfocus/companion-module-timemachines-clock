@@ -50,7 +50,7 @@ class instance extends instance_skel {
 	updateConfig(config) {
 		this.config = config
 
-		this.status(this.STATUS_WARNING, 'connecting')
+		this.status(this.STATUS_WARNING, 'Connecting')
 
 		if (this.INTERVAL) {
 			clearInterval(this.INTERVAL)

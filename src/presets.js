@@ -8,7 +8,7 @@ exports.getPresets = function () {
 
 	presets.push({
 		category: 'Clock Display',
-		label: 'Show Timer Value',
+		label: 'Show Dispaly Value',
 		bank: {
 			style: 'text',
 			text: '$(tm-clock:display)',
@@ -95,8 +95,8 @@ exports.getPresets = function () {
 				options: {
 					mode: 'sec',
 					hours: 0,
-					min: 0,
-					sec: 0,
+					minutes: 30,
+					seconds: 0,
 					tseconds: 0,
 					alarmEnable: false,
 				},
@@ -121,7 +121,7 @@ exports.getPresets = function () {
 		label: 'Control Count-Up Timer',
 		bank: {
 			style: 'text',
-			text: '$(tm-clock:display)',
+			text: '$(tm-clock:display)\\n$(tm-clock:timer_state)',
 			size: '14',
 			color: ColorWhite,
 			bgcolor: ColorBlack,
@@ -222,7 +222,7 @@ exports.getPresets = function () {
 		label: 'Control Countdown Timer',
 		bank: {
 			style: 'text',
-			text: '$(tm-clock:display)',
+			text: '$(tm-clock:display)\\n$(tm-clock:timer_state)',
 			size: '14',
 			color: ColorWhite,
 			bgcolor: ColorBlack,
@@ -320,6 +320,9 @@ exports.getPresets = function () {
 					alarmEnable: false,
 				},
 			},
+			{
+				action: 'startCountDownTimer',
+			},
 		],
 	})
 
@@ -346,6 +349,9 @@ exports.getPresets = function () {
 						alarmEnable: false,
 					},
 				},
+				{
+					action: 'startCountDownTimer',
+				},
 			],
 		})
 	}
@@ -371,6 +377,9 @@ exports.getPresets = function () {
 					tseconds: 0,
 					alarmEnable: false,
 				},
+			},
+			{
+				action: 'startCountDownTimer',
 			},
 		],
 	})
