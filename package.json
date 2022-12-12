@@ -1,34 +1,20 @@
 {
 	"name": "timemachines-clock",
-	"version": "1.1.0",
-	"api_version": "1.0",
-	"keywords": [
-		"clock",
-		"timer"
-	],
-	"manufacturer": "TimeMachines",
-	"product": [
-		"Clock"
-	],
-	"shortname": "tm-clock",
-	"description": "TimeMachines Clocks",
+	"version": "2.0.0",
 	"main": "src/index.js",
+	"type": "module",
 	"scripts": {
 		"test": "echo \"Error: no test specified\" && exit 1"
 	},
-	"author": "Joseph Adams <josephdadams@gmail.com>",
-	"contributors": [
-		"Bryce Seifert"
-	],
 	"license": "MIT",
-	"homepage": "https://github.com/bitfocus/companion-module-timemachines-clock#readme",
-	"bugs": {
-		"url": "https://github.com/bitfocus/companion-module-timemachines-clock/issues"
-	},
 	"repository": {
 		"type": "git",
 		"url": "git+https://github.com/bitfocus/companion-module-timemachines-clock.git"
 	},
 	"dependencies": {
+		"@companion-module/base": "~1.0.0"
+	},
+	"devDependencies": {
+		"@companion-module/tools": "^0.5.1"
 	}
 }

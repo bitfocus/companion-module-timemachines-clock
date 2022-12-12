@@ -1,92 +1,20 @@
-const instance_skel = require('../../../instance_skel')
-const udp = require('../../../udp')
+import { InstanceBase, UDPHelper, Regex, runEntrypoint } from '@companion-module/base'
 
-const actions = require('./actions')
-const presets = require('./presets')
-const { updateVariableDefinitions, checkVariables } = require('./variables')
-const { initFeedbacks } = require('./feedbacks')
+import { getActions } from './actions.js'
+import { getPresets } from './presets.js'
+import { getVariables, updateVariables } from './variables.js'
+import { getFeedbacks } from './feedbacks.js'
 
-let debug
-let log
+class TimeMachinesInstance extends InstanceBase {
+	constructor(internal) {
+		super(internal)
 
-class instance extends instance_skel {
-	constructor(system, id, config) {
-		super(system, id, config)
-
-		Object.assign(this, {
-			...actions,
-			...presets,
-		})
-
-		this.updateVariableDefinitions = updateVariableDefinitions
-		this.checkVariables = checkVariables
+		this.updateVariables = updateVariables
 	}
 
-	config_fields() {
-		return [
-			{
-				type: 'text',
-				id: 'info',
-				width: 12,
-				label: 'Information',
-				value: 'This module controls Time Machines Corp Clocks, Displays, and Timers',
-			},
-			{
-				type: 'textinput',
-				id: 'host',
-				label: 'IP Address',
-				width: 4,
-				regex: this.REGEX_IP,
-			},
-			{
-				type: 'checkbox',
-				id: 'polling',
-				label: 'Polling (Required for Variables/Feedback)',
-				default: true,
-			},
-		]
-	}
-
-	updateConfig(config) {
+	async init(config) {
 		this.config = config
-
-		this.status(this.STATUS_WARNING, 'Connecting')
-
-		if (this.INTERVAL) {
-			clearInterval(this.INTERVAL)
-			this.INTERVAL = null
-		}
-
-		this.initConnection()
-
-		this.actions()
-		this.initFeedbacks()
-		this.initVariables()
-		this.initPresets()
-
-		this.checkVariables()
-		this.checkFeedbacks()
-	}
-
-	destroy() {
-		if (this.udp !== undefined) {
-			this.udp.destroy()
-			delete this.udp
-		}
-
-		if (this.INTERVAL) {
-			clearInterval(this.INTERVAL)
-			this.INTERVAL = null
-		}
-
-		debug('destroy', this.id)
-	}
-
-	init() {
-		debug = this.debug
-		log = this.log
-
-		this.status(this.STATUS_WARNING, 'Connecting')
+		this.updateStatus('connecting')
 
 		this.INTERVAL = null //used to poll the clock every second
 		this.CONNECTED = false //used for friendly notifying of the user that we have not received data yet
@@ -102,7 +30,6 @@ class instance extends instance_skel {
 			timerState: '',
 			timerStateFriendly: '',
 		}
-
 		this.COLORTABLE = [
 			{ id: 'red', label: 'Red', r: 255, g: 0, b: 0 },
 			{ id: 'green', label: 'Green', r: 0, g: 255, b: 0 },
@@ -115,30 +42,91 @@ class instance extends instance_skel {
 
 		this.initConnection()
 
-		this.actions()
+		this.initActions()
 		this.initFeedbacks()
 		this.initVariables()
 		this.initPresets()
 
-		this.checkVariables()
+		this.updateVariables()
+		this.checkFeedbacks()
+	}
+
+	async destroy() {
+		if (this.udp !== undefined) {
+			this.udp.destroy()
+			delete this.udp
+		}
+
+		if (this.INTERVAL) {
+			clearInterval(this.INTERVAL)
+			this.INTERVAL = null
+		}
+	}
+
+	getConfigFields() {
+		return [
+			{
+				type: 'static-text',
+				id: 'info',
+				width: 12,
+				label: 'Information',
+				value: 'This module controls Time Machines Corp Clocks, Displays, and Timers',
+			},
+			{
+				type: 'textinput',
+				id: 'host',
+				label: 'IP Address',
+				width: 4,
+				regex: Regex.IP,
+			},
+			{
+				type: 'checkbox',
+				id: 'polling',
+				label: 'Polling (Required for Variables/Feedback)',
+				default: true,
+			},
+		]
+	}
+
+	async configUpdated(config) {
+		this.config = config
+
+		this.updateStatus('connecting')
+
+		if (this.INTERVAL) {
+			clearInterval(this.INTERVAL)
+			this.INTERVAL = null
+		}
+
+		this.initConnection()
+
+		this.initActions()
+		this.initFeedbacks()
+		this.initVariables()
+		this.initPresets()
+
+		this.updateVariables()
 		this.checkFeedbacks()
 	}
 
 	initVariables() {
-		this.updateVariableDefinitions()
+		const variables = getVariables.bind(this)()
+		this.setVariableDefinitions(variables)
 	}
 
 	initFeedbacks() {
-		const feedbacks = initFeedbacks.bind(this)()
+		const feedbacks = getFeedbacks.bind(this)()
 		this.setFeedbackDefinitions(feedbacks)
 	}
 
 	initPresets() {
-		this.setPresetDefinitions(this.getPresets())
+		const presets = getPresets.bind(this)()
+		this.setPresetDefinitions(presets)
 	}
 
-	actions() {
-		this.setActions(this.getActions())
+	initActions() {
+		const actions = getActions.bind(this)()
+		this.setActionDefinitions(actions)
 	}
 
 	initConnection() {
@@ -148,22 +136,15 @@ class instance extends instance_skel {
 				delete this.udp
 			}
 
-			this.udp = new udp(this.config.host, 7372)
+			this.udp = new UDPHelper(this.config.host, 7372)
 			setTimeout(this.checkConnection.bind(this), 10000)
 
 			this.udp.on('error', (err) => {
-				this.debug('Network error', err)
-				if (this.currentStatus != 2) {
-					this.status(this.STATE_ERROR, err)
-					this.log('error', 'Network error: ' + err.message)
-				}
+				this.updateStatus('connection_failure', err)
 			})
 
 			this.udp.on('data', (data) => {
-				if (this.currentStatus != 0) {
-					this.log('info', 'Connected to a TimeMachines Clock.')
-					this.status(this.STATE_OK)
-				}
+				this.updateStatus('ok')
 
 				this.CONNECTED = true
 				this.DEVICEINFO.connection = 'Connected'
@@ -184,25 +165,21 @@ class instance extends instance_skel {
 
 	checkConnection() {
 		if (!this.CONNECTED) {
-			if (this.currentStatus != 2) {
-				this.status(this.STATE_ERROR)
-				this.log('error', 'Failed to receive response from device. Is this the right IP address?')
-			}
-			this.setVariable('connection', 'Error - See Log')
+			this.updateStatus('connection_failure')
+			this.setVariable('connection', 'Error')
 		}
 	}
+
 	setupInterval() {
 		this.stopInterval()
 
 		if (this.config.polling) {
 			this.INTERVAL = setInterval(this.getInformation.bind(this), 1000)
-			this.debug(`Starting Update Interval: Every 1000ms`)
 		}
 	}
 
 	stopInterval() {
 		if (this.INTERVAL !== null) {
-			this.debug('Stopping Update Interval.')
 			clearInterval(this.INTERVAL)
 			this.INTERVAL = null
 		}
@@ -210,7 +187,6 @@ class instance extends instance_skel {
 
 	getInformation() {
 		//Get all information from Device
-
 		if (this.udp) {
 			this.udp.send(Buffer.from('A104B2', 'hex'))
 		}
@@ -238,13 +214,13 @@ class instance extends instance_skel {
 				break
 			case 4:
 				model = 'TM1000A'
-				this.status(this.STATE_ERROR)
+				this.updateStatus('bad_config')
 				this.log('error', 'This model type is not implemented in this module at this time.')
 				this.stopInterval()
 				break
 			case 5:
 				model = 'TM2000A'
-				this.status(this.STATE_ERROR)
+				this.updateStatus('bad_config')
 				this.log('error', 'This model type is not implemented in this module at this time.')
 				this.stopInterval()
 				break
@@ -313,7 +289,7 @@ class instance extends instance_skel {
 		}
 
 		this.checkFeedbacks()
-		this.checkVariables()
+		this.updateVariables()
 	}
 	setCountUpTimerMode(mode) {
 		let hexstring = ''
@@ -601,4 +577,4 @@ class instance extends instance_skel {
 		this.udp.send(Buffer.from(hexstring, 'hex'))
 	}
 }
-exports = module.exports = instance
+runEntrypoint(TimeMachinesInstance, [])
