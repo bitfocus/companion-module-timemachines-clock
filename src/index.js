@@ -148,7 +148,7 @@ class TimeMachinesInstance extends InstanceBase {
 
 				this.CONNECTED = true
 				this.DEVICEINFO.connection = 'Connected'
-				this.setVariable('connection', 'Connected')
+				this.setVariableValues({ connection: 'Connected' })
 				let hexString = data.toString('hex')
 				if (hexString.length == 80) {
 					//this is the main settings information
@@ -166,7 +166,7 @@ class TimeMachinesInstance extends InstanceBase {
 	checkConnection() {
 		if (!this.CONNECTED) {
 			this.updateStatus('connection_failure')
-			this.setVariable('connection', 'Error')
+			this.setVariableValues({ connection: 'Error' })
 		}
 	}
 
