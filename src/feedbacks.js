@@ -1,14 +1,16 @@
-exports.initFeedbacks = function () {
+import { combineRgb } from '@companion-module/base'
+
+export function getFeedbacks() {
 	const feedbacks = {}
 
-	const foregroundColor = this.rgb(255, 255, 255) // White
-	const backgroundColorRed = this.rgb(255, 0, 0) // Red
+	const foregroundColor = combineRgb(255, 255, 255) // White
+	const backgroundColorRed = combineRgb(255, 0, 0) // Red
 
 	feedbacks.displayMode = {
 		type: 'boolean',
-		label: 'Display Mode',
+		name: 'Display Mode',
 		description: 'Indicate current display mode',
-		style: {
+		defaultStyle: {
 			color: foregroundColor,
 			bgcolor: backgroundColorRed,
 		},
@@ -36,9 +38,9 @@ exports.initFeedbacks = function () {
 
 	feedbacks.timerState = {
 		type: 'boolean',
-		label: 'Timer State',
+		name: 'Timer State',
 		description: 'Indicate if Timer is Running or Stopped',
-		style: {
+		defaultStyle: {
 			color: foregroundColor,
 			bgcolor: backgroundColorRed,
 		},
@@ -75,9 +77,9 @@ exports.initFeedbacks = function () {
 
 	feedbacks.timerLeft = {
 		type: 'boolean',
-		label: 'Remaining Seconds on Timer ',
+		name: 'Remaining Seconds on Timer ',
 		description: 'Indicate if Timer has less than the specified number of seconds left',
-		style: {
+		defaultStyle: {
 			color: foregroundColor,
 			bgcolor: backgroundColorRed,
 		},
@@ -103,6 +105,5 @@ exports.initFeedbacks = function () {
 		},
 	}
 
-	this.setFeedbackDefinitions(feedbacks)
 	return feedbacks
 }

@@ -1,41 +1,57 @@
-exports.getPresets = function () {
-	let presets = []
+import { combineRgb } from '@companion-module/base'
 
-	const ColorWhite = this.rgb(255, 255, 255)
-	const ColorBlack = this.rgb(0, 0, 0)
-	const ColorRed = this.rgb(200, 0, 0)
-	const ColorGreen = this.rgb(0, 200, 0)
+export function getPresets() {
+	let presets = {}
 
-	presets.push({
+	const ColorWhite = combineRgb(255, 255, 255)
+	const ColorBlack = combineRgb(0, 0, 0)
+	const ColorRed = combineRgb(200, 0, 0)
+	const ColorGreen = combineRgb(0, 200, 0)
+
+	presets['displayValue'] = {
+		type: 'button',
 		category: 'Clock Display',
-		label: 'Show Dispaly Value',
-		bank: {
+		name: 'Show Display Value',
+		style: {
 			style: 'text',
 			text: '$(tm-clock:display)',
 			size: '14',
 			color: ColorWhite,
 			bgcolor: ColorBlack,
 		},
-	})
+		steps: [
+			{
+				down: [],
+				up: [],
+			},
+		],
+		feedbacks: [],
+	}
 
-	presets.push({
+	presets['showTimeOfDay'] = {
+		type: 'button',
 		category: 'Clock Mode',
-		label: 'Show Time of Day',
-		bank: {
+		name: 'Show Time of Day',
+		style: {
 			style: 'text',
 			text: 'Show Time of Day',
 			size: '14',
 			color: ColorWhite,
 			bgcolor: ColorBlack,
 		},
-		actions: [
+		steps: [
 			{
-				action: 'showTimeOfDay',
+				down: [
+					{
+						actionId: 'showTimeOfDay',
+					},
+				],
+				up: [],
 			},
 		],
 		feedbacks: [
 			{
-				type: 'displayMode',
+				feedbackId: 'displayMode',
 				options: {
 					mode: 'timeofday',
 				},
@@ -45,29 +61,35 @@ exports.getPresets = function () {
 				},
 			},
 		],
-	})
+	}
 
-	presets.push({
+	presets['countUpTimerMode'] = {
+		type: 'button',
 		category: 'Clock Mode',
-		label: 'Show Count-Up Timer',
-		bank: {
+		name: 'Show Count-Up Timer',
+		style: {
 			style: 'text',
 			text: 'Show Count-Up',
 			size: '14',
 			color: ColorWhite,
 			bgcolor: ColorBlack,
 		},
-		actions: [
+		steps: [
 			{
-				action: 'countUpTimerMode',
-				options: {
-					mode: 'sec',
-				},
+				down: [
+					{
+						actionId: 'countUpTimerMode',
+						options: {
+							mode: 'sec',
+						},
+					},
+				],
+				up: [],
 			},
 		],
 		feedbacks: [
 			{
-				type: 'displayMode',
+				feedbackId: 'displayMode',
 				options: {
 					mode: 'countup',
 				},
@@ -77,34 +99,40 @@ exports.getPresets = function () {
 				},
 			},
 		],
-	})
+	}
 
-	presets.push({
+	presets['countDownTimerMode'] = {
+		type: 'button',
 		category: 'Clock Mode',
-		label: 'Show Countdown Timer',
-		bank: {
+		name: 'Show Countdown Timer',
+		style: {
 			style: 'text',
 			text: 'Show Count Down',
 			size: '14',
 			color: ColorWhite,
 			bgcolor: ColorBlack,
 		},
-		actions: [
+		steps: [
 			{
-				action: 'countDownTimerMode',
-				options: {
-					mode: 'sec',
-					hours: 0,
-					minutes: 30,
-					seconds: 0,
-					tseconds: 0,
-					alarmEnable: false,
-				},
+				down: [
+					{
+						actionId: 'countDownTimerMode',
+						options: {
+							mode: 'sec',
+							hours: 0,
+							minutes: 30,
+							seconds: 0,
+							tseconds: 0,
+							alarmEnable: false,
+						},
+					},
+				],
+				up: [],
 			},
 		],
 		feedbacks: [
 			{
-				type: 'displayMode',
+				feedbackId: 'displayMode',
 				options: {
 					mode: 'countdown',
 				},
@@ -114,32 +142,36 @@ exports.getPresets = function () {
 				},
 			},
 		],
-	})
+	}
 
-	presets.push({
+	presets['controlCountUpTimer'] = {
+		type: 'button',
 		category: 'Count-Up Timer',
-		label: 'Control Count-Up Timer',
-		bank: {
+		name: 'Control Count-Up Timer',
+		style: {
 			style: 'text',
 			text: '$(tm-clock:display)\\n$(tm-clock:timer_state)',
 			size: '14',
 			color: ColorWhite,
 			bgcolor: ColorBlack,
-			latch: true,
 		},
-		actions: [
+		steps: [
 			{
-				action: 'startCountUpTimer',
-			},
-		],
-		release_actions: [
-			{
-				action: 'pauseCountUpTimer',
+				down: [
+					{
+						actionId: 'startCountUpTimer',
+					},
+				],
+				up: [
+					{
+						actionId: 'pauseCountUpTimer',
+					},
+				],
 			},
 		],
 		feedbacks: [
 			{
-				type: 'timerState',
+				feedbackId: 'timerState',
 				options: {
 					mode: 'countup',
 					state: 'running',
@@ -161,86 +193,111 @@ exports.getPresets = function () {
 				},
 			},
 		],
-	})
+	}
 
-	presets.push({
+	presets['startCountUpTimer'] = {
+		type: 'button',
 		category: 'Count-Up Timer',
-		label: 'Start Count-Up Timer',
-		bank: {
+		name: 'Start Count-Up Timer',
+		style: {
 			style: 'text',
 			text: 'Start Count-Up Timer',
 			size: '14',
 			color: ColorWhite,
 			bgcolor: ColorBlack,
 		},
-		actions: [
+		steps: [
 			{
-				action: 'startCountUpTimer',
+				down: [
+					{
+						actionId: 'startCountUpTimer',
+					},
+				],
+				up: [],
 			},
 		],
-	})
+		feedbacks: [],
+	}
 
-	presets.push({
+	presets['pauseCountUpTimer'] = {
+		type: 'button',
 		category: 'Count-Up Timer',
-		label: 'Pause Count-Up Timer',
-		bank: {
+		name: 'Pause Count-Up Timer',
+		style: {
 			style: 'text',
 			text: 'Pause Count-Up Timer',
 			size: '14',
 			color: ColorWhite,
 			bgcolor: ColorBlack,
 		},
-		actions: [
+		steps: [
 			{
-				action: 'pauseCountUpTimer',
+				down: [
+					{
+						actionId: 'pauseCountUpTimer',
+					},
+				],
+				up: [],
 			},
 		],
-	})
+		feedbacks: [],
+	}
 
-	presets.push({
+	presets['resetCountUpTimer'] = {
+		type: 'button',
 		category: 'Count-Up Timer',
-		label: 'Reset Count-Up Timer',
-		bank: {
+		name: 'Reset Count-Up Timer',
+		style: {
 			style: 'text',
 			text: 'Reset Count-Up Timer',
 			size: '14',
 			color: ColorWhite,
 			bgcolor: ColorBlack,
 		},
-		actions: [
+		steps: [
 			{
-				action: 'resetCountUpTimer',
-				options: {
-					mode: 'sec',
-				},
+				down: [
+					{
+						actionId: 'resetCountUpTimer',
+						options: {
+							mode: 'sec',
+						},
+					},
+				],
+				up: [],
 			},
 		],
-	})
+		feedbacks: [],
+	}
 
-	presets.push({
+	presets['controlCountDownTimer'] = {
+		type: 'button',
 		category: 'Countdown Timer',
-		label: 'Control Countdown Timer',
-		bank: {
+		name: 'Control Countdown Timer',
+		style: {
 			style: 'text',
 			text: '$(tm-clock:display)\\n$(tm-clock:timer_state)',
 			size: '14',
 			color: ColorWhite,
 			bgcolor: ColorBlack,
-			latch: true,
 		},
-		actions: [
+		steps: [
 			{
-				action: 'startCountDownTimer',
-			},
-		],
-		release_actions: [
-			{
-				action: 'pauseCountDownTimer',
+				down: [
+					{
+						actionId: 'startCountDownTimer',
+					},
+				],
+				up: [
+					{
+						actionId: 'pauseCountDownTimer',
+					},
+				],
 			},
 		],
 		feedbacks: [
 			{
-				type: 'timerState',
+				feedbackId: 'timerState',
 				options: {
 					mode: 'countdown',
 					state: 'running',
@@ -262,280 +319,364 @@ exports.getPresets = function () {
 				},
 			},
 		],
-	})
+	}
 
-	presets.push({
+	presets['startCountDownTimer'] = {
+		type: 'button',
 		category: 'Countdown Timer',
-		label: 'Start Countdown Timer',
-		bank: {
+		name: 'Start Countdown Timer',
+		style: {
 			style: 'text',
 			text: 'Start Count Down',
 			size: '14',
 			color: ColorWhite,
 			bgcolor: ColorBlack,
 		},
-		actions: [
+		steps: [
 			{
-				action: 'startCountDownTimer',
+				down: [
+					{
+						actionId: 'startCountDownTimer',
+					},
+				],
+				up: [],
 			},
 		],
-	})
+		feedbacks: [],
+	}
 
-	presets.push({
+	presets['pauseCountDownTimer'] = {
+		type: 'button',
 		category: 'Countdown Timer',
-		label: 'Pause Countdown Timer',
-		bank: {
+		name: 'Pause Countdown Timer',
+		style: {
 			style: 'text',
 			text: 'Pause Count Down',
 			size: '14',
 			color: ColorWhite,
 			bgcolor: ColorBlack,
 		},
-		actions: [
+		steps: [
 			{
-				action: 'pauseCountDownTimer',
+				down: [
+					{
+						actionId: 'pauseCountDownTimer',
+					},
+				],
+				up: [],
 			},
 		],
-	})
+		feedbacks: [],
+	}
 
-	presets.push({
+	presets['start1minCountdown'] = {
+		type: 'button',
 		category: 'Countdown Timer',
-		label: `Start 1m Countdown`,
-		bank: {
+		name: `Start 1m Countdown`,
+		style: {
 			style: 'text',
 			text: `Start 1m Count Down`,
 			size: '14',
 			color: ColorWhite,
 			bgcolor: ColorBlack,
 		},
-		actions: [
+		steps: [
 			{
-				action: 'countDownTimerMode',
-				options: {
-					mode: 'sec',
-					hours: 0,
-					minutes: 1,
-					seconds: 0,
-					tseconds: 0,
-					alarmEnable: false,
-				},
-			},
-			{
-				action: 'startCountDownTimer',
+				down: [
+					{
+						actionId: 'countDownTimerMode',
+						options: {
+							mode: 'sec',
+							hours: 0,
+							minutes: 1,
+							seconds: 0,
+							tseconds: 0,
+							alarmEnable: false,
+						},
+					},
+					{
+						actionId: 'startCountDownTimer',
+					},
+				],
+				up: [],
 			},
 		],
-	})
+		feedbacks: [],
+	}
 
 	for (let i = 5; i <= 30; i = i + 5) {
-		presets.push({
+		presets[`start${[i]}minCountdown`] = {
+			type: 'button',
 			category: 'Countdown Timer',
-			label: `Start ${[i]}m Countdown`,
-			bank: {
+			name: `Start ${[i]}m Countdown`,
+			style: {
 				style: 'text',
 				text: `Start ${[i]}m Count Down`,
 				size: '14',
 				color: ColorWhite,
 				bgcolor: ColorBlack,
 			},
-			actions: [
+			steps: [
 				{
-					action: 'countDownTimerMode',
-					options: {
-						mode: 'sec',
-						hours: 0,
-						minutes: i,
-						seconds: 0,
-						tseconds: 0,
-						alarmEnable: false,
-					},
-				},
-				{
-					action: 'startCountDownTimer',
+					down: [
+						{
+							actionId: 'countDownTimerMode',
+							options: {
+								mode: 'sec',
+								hours: 0,
+								minutes: i,
+								seconds: 0,
+								tseconds: 0,
+								alarmEnable: false,
+							},
+						},
+						{
+							actionId: 'startCountDownTimer',
+						},
+					],
+					up: [],
 				},
 			],
-		})
+			feedbacks: [],
+		}
 	}
 
-	presets.push({
+	presets['start1hCountdown'] = {
+		type: 'button',
 		category: 'Countdown Timer',
-		label: `Start 1m Countdown`,
-		bank: {
+		name: `Start 1h Countdown`,
+		style: {
 			style: 'text',
 			text: `Start 1h Count Down`,
 			size: '14',
 			color: ColorWhite,
 			bgcolor: ColorBlack,
 		},
-		actions: [
+		steps: [
 			{
-				action: 'countDownTimerMode',
-				options: {
-					mode: 'sec',
-					hours: 1,
-					minutes: 0,
-					seconds: 0,
-					tseconds: 0,
-					alarmEnable: false,
-				},
-			},
-			{
-				action: 'startCountDownTimer',
+				down: [
+					{
+						actionId: 'countDownTimerMode',
+						options: {
+							mode: 'sec',
+							hours: 1,
+							minutes: 0,
+							seconds: 0,
+							tseconds: 0,
+							alarmEnable: false,
+						},
+					},
+					{
+						actionId: 'startCountDownTimer',
+					},
+				],
+				up: [],
 			},
 		],
-	})
+		feedbacks: [],
+	}
 
-	presets.push({
+	presets['add30sToTimer'] = {
+		type: 'button',
 		category: 'Countdown Timer',
-		label: `Add 30s to Timer`,
-		bank: {
+		name: `Add 30s to Timer`,
+		style: {
 			style: 'text',
 			text: `Add 30s to Timer`,
 			size: '14',
 			color: ColorWhite,
 			bgcolor: ColorBlack,
 		},
-		actions: [
+		steps: [
 			{
-				action: 'increaseTimerWhileRunning',
-				options: {
-					hours: 0,
-					minutes: 0,
-					seconds: 30,
-				},
+				down: [
+					{
+						actionId: 'increaseTimerWhileRunning',
+						options: {
+							hours: 0,
+							minutes: 0,
+							seconds: 30,
+						},
+					},
+				],
+				up: [],
 			},
 		],
-	})
+		feedbacks: [],
+	}
 
-	presets.push({
+	presets['add1mToTimer'] = {
+		type: 'button',
 		category: 'Countdown Timer',
-		label: `Add 1m to Timer`,
-		bank: {
+		name: `Add 1m to Timer`,
+		style: {
 			style: 'text',
 			text: `Add 1m to Timer`,
 			size: '14',
 			color: ColorWhite,
 			bgcolor: ColorBlack,
 		},
-		actions: [
+		steps: [
 			{
-				action: 'increaseTimerWhileRunning',
-				options: {
-					hours: 0,
-					minutes: 1,
-					seconds: 0,
-				},
+				down: [
+					{
+						actionId: 'increaseTimerWhileRunning',
+						options: {
+							hours: 0,
+							minutes: 1,
+							seconds: 0,
+						},
+					},
+				],
+				up: [],
 			},
 		],
-	})
+		feedbacks: [],
+	}
 
-	presets.push({
+	presets['add5mToTimer'] = {
+		type: 'button',
 		category: 'Countdown Timer',
-		label: `Add 5m to Timer`,
-		bank: {
+		name: `Add 5m to Timer`,
+		style: {
 			style: 'text',
 			text: `Add 5m to Timer`,
 			size: '14',
 			color: ColorWhite,
 			bgcolor: ColorBlack,
 		},
-		actions: [
+		steps: [
 			{
-				action: 'increaseTimerWhileRunning',
-				options: {
-					hours: 0,
-					minutes: 5,
-					seconds: 0,
-				},
+				down: [
+					{
+						actionId: 'increaseTimerWhileRunning',
+						options: {
+							hours: 0,
+							minutes: 5,
+							seconds: 0,
+						},
+					},
+				],
+				up: [],
 			},
 		],
-	})
+		feedbacks: [],
+	}
 
 	for (let i = 0; i <= 9; i++) {
-		presets.push({
+		presets[`executeProgram${[i]}`] = {
+			type: 'button',
 			category: 'Stored Programs',
-			label: `Execute Program ${[i]}`,
-			bank: {
+			name: `Execute Program ${[i]}`,
+			style: {
 				style: 'text',
 				text: `EXEC PROG\\n${i}`,
 				size: '14',
 				color: ColorWhite,
 				bgcolor: ColorBlack,
 			},
-			actions: [
+			steps: [
 				{
-					action: 'executeStoredProgram',
-					options: {
-						program: i,
-					},
+					down: [
+						{
+							actionId: 'executeStoredProgram',
+							options: {
+								program: i,
+							},
+						},
+					],
+					up: [],
 				},
 			],
-		})
+			feedbacks: [],
+		}
 	}
 
-	presets.push({
+	presets['relayControl'] = {
+		type: 'button',
 		category: 'Relay Control',
-		label: `Close Relay for 1 second`,
-		bank: {
+		name: `Close Relay for 1 second`,
+		style: {
 			style: 'text',
 			text: `Close Relay\\n1 sec`,
 			size: '14',
 			color: ColorWhite,
 			bgcolor: ColorBlack,
 		},
-		actions: [
+		steps: [
 			{
-				action: 'relayControl',
-				options: {
-					seconds: '1',
-				},
+				down: [
+					{
+						actionId: 'relayControl',
+						options: {
+							seconds: '1',
+						},
+					},
+				],
+				up: [],
 			},
 		],
-	})
+		feedbacks: [],
+	}
 
 	for (let i = 0; i <= 100; i = i + 10) {
-		presets.push({
+		presets[`displayBrightness${i}`] = {
+			type: 'button',
 			category: 'Display Brightness',
-			label: `Set Display Brightness to ${i}%`,
-			bank: {
+			name: `Set Display Brightness to ${i}%`,
+			style: {
 				style: 'text',
 				text: `${i}%`,
 				size: '14',
 				color: ColorWhite,
 				bgcolor: ColorBlack,
 			},
-			actions: [
+			steps: [
 				{
-					action: 'displayBrightness',
-					options: {
-						digit: i,
-						dot: i,
-					},
+					down: [
+						{
+							actionId: 'displayBrightness',
+							options: {
+								digit: i,
+								dot: i,
+							},
+						},
+					],
+					up: [],
 				},
 			],
-		})
+			feedbacks: [],
+		}
 	}
 
 	for (let i = 0; i < this.COLORTABLE.length; i++) {
-		presets.push({
+		presets[`displayColors${this.COLORTABLE[i].label}`] = {
+			type: 'button',
 			category: 'Display Colors',
-			label: `Set Display Color to ${this.COLORTABLE[i].label}`,
-			bank: {
+			name: `Set Display Color to ${this.COLORTABLE[i].label}`,
+			style: {
 				style: 'text',
 				text: `${this.COLORTABLE[i].label}`,
 				size: '14',
 				color: this.ColorBlack,
-				bgcolor: this.rgb(this.COLORTABLE[i].r, this.COLORTABLE[i].g, this.COLORTABLE[i].b),
+				bgcolor: combineRgb(this.COLORTABLE[i].r, this.COLORTABLE[i].g, this.COLORTABLE[i].b),
 			},
-			actions: [
+			steps: [
 				{
-					action: 'displayColors',
-					options: {
-						color_mmss: this.COLORTABLE[i].id,
-						color_hh: this.COLORTABLE[i].id,
-					},
+					down: [
+						{
+							actionId: 'displayColors',
+							options: {
+								color_mmss: this.COLORTABLE[i].id,
+								color_hh: this.COLORTABLE[i].id,
+							},
+						},
+					],
+					up: [],
 				},
 			],
-		})
+			feedbacks: [],
+		}
 	}
 
 	return presets

@@ -1,29 +1,29 @@
-exports.updateVariableDefinitions = function () {
+export function getVariables() {
 	const variables = []
 
-	variables.push({ name: 'connection', label: 'Connection' })
+	variables.push({ variableId: 'connection', name: 'Connection' })
 
-	variables.push({ name: 'model', label: 'Model' })
-	variables.push({ name: 'name', label: 'Unit Name' })
-	variables.push({ name: 'firmware', label: 'Firmware Version' })
+	variables.push({ variableId: 'model', name: 'Model' })
+	variables.push({ variableId: 'name', name: 'Unit Name' })
+	variables.push({ variableId: 'firmware', name: 'Firmware Version' })
 
-	variables.push({ name: 'display', label: 'Current Display on Clock' })
-	variables.push({ name: 'display_mode', label: 'Display Mode' })
-	variables.push({ name: 'timer_state', label: 'Timer State' })
+	variables.push({ variableId: 'display', name: 'Current Display on Clock' })
+	variables.push({ variableId: 'display_mode', name: 'Display Mode' })
+	variables.push({ variableId: 'timer_state', name: 'Timer State' })
 
-	this.setVariableDefinitions(variables)
+	return variables
 }
 
-exports.checkVariables = function () {
+export function updateVariables() {
 	try {
-		this.setVariable('connection', this.DEVICEINFO.connection)
-
-		this.setVariable('model', this.DEVICEINFO.model)
-		this.setVariable('name', this.DEVICEINFO.name)
-		this.setVariable('firmware', this.DEVICEINFO.firmware)
-
-		this.setVariable('display', this.DEVICEINFO.display)
-		this.setVariable('display_mode', this.DEVICEINFO.displayModeFriendly)
-		this.setVariable('timer_state', this.DEVICEINFO.timerStateFriendly)
+		this.setVariableValues({
+			connection: this.DEVICEINFO.connection,
+			model: this.DEVICEINFO.model,
+			name: this.DEVICEINFO.name,
+			firmware: this.DEVICEINFO.firmware,
+			display: this.DEVICEINFO.display,
+			display_mode: this.DEVICEINFO.displayModeFriendly,
+			timer_state: this.DEVICEINFO.timerStateFriendly,
+		})
 	} catch (error) {}
 }
