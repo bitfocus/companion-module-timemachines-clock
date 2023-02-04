@@ -25,11 +25,6 @@
 		"entrypoint": "../src/index.js"
 	},
 	"manufacturer": "TimeMachines",
-	"products": [
-		"Clock"
-	],
-	"keywords": [
-		"clock",
-		"timer"
-	]
+	"products": ["Clock"],
+	"keywords": ["clock", "timer"]
 }
