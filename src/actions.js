@@ -459,16 +459,86 @@ export function getActions() {
 					choices: this.COLORTABLE,
 				},
 				{
+					type: 'number',
+					label: 'HH Digit - Red',
+					id: 'custom_hh_r',
+					default: 255,
+					min: 0,
+					max: 255,
+					isVisible: (options) => options.color_hh === 'custom',
+				},
+				{
+					type: 'number',
+					label: 'HH Digit - Green',
+					id: 'custom_hh_g',
+					default: 255,
+					min: 0,
+					max: 255,
+					isVisible: (options) => options.color_hh === 'custom',
+				},
+				{
+					type: 'number',
+					label: 'HH Digit - Blue',
+					id: 'custom_hh_b',
+					default: 255,
+					min: 0,
+					max: 255,
+					isVisible: (options) => options.color_hh === 'custom',
+				},
+				{
 					type: 'dropdown',
 					label: 'MM:SS Digit Color',
 					id: 'color_mmss',
 					default: this.COLORTABLE[0].id,
 					choices: this.COLORTABLE,
 				},
+				{
+					type: 'number',
+					label: 'MM:SS Digit - Red',
+					id: 'custom_mmss_r',
+					default: 255,
+					min: 0,
+					max: 255,
+					isVisible: (options) => options.color_mmss === 'custom',
+				},
+				{
+					type: 'number',
+					label: 'MM:SS Digit - Green',
+					id: 'custom_mmss_g',
+					default: 255,
+					min: 0,
+					max: 255,
+					isVisible: (options) => options.color_mmss === 'custom',
+				},
+				{
+					type: 'number',
+					label: 'MM:SS Digit - Blue',
+					id: 'custom_mmss_b',
+					default: 255,
+					min: 0,
+					max: 255,
+					isVisible: (options) => options.color_mmss === 'custom',
+				},
 			],
 			callback: (action) => {
 				let opt = action.options
-				this.setDisplayColor(opt.color_mmss, opt.color_hh)
+				let custom_hh = null
+				let custom_mmss = null
+				if (opt.color_hh === 'custom') {
+					custom_hh = {
+						r: opt.custom_hh_r,
+						g: opt.custom_hh_g,
+						b: opt.custom_hh_b,
+					}
+				}
+				if (opt.color_mmss === 'custom') {
+					custom_mmss = {
+						r: opt.custom_mmss_r,
+						g: opt.custom_mmss_g,
+						b: opt.custom_mmss_b,
+					}
+				}
+				this.setDisplayColor(opt.color_mmss, opt.color_hh, custom_hh, custom_mmss)
 			},
 		},
 	}

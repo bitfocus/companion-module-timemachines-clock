@@ -4,6 +4,7 @@ import { getActions } from './actions.js'
 import { getPresets } from './presets.js'
 import { getVariables, updateVariables } from './variables.js'
 import { getFeedbacks } from './feedbacks.js'
+import UpgradeScripts from './upgrades.js'
 
 class TimeMachinesInstance extends InstanceBase {
 	constructor(internal) {
@@ -38,6 +39,7 @@ class TimeMachinesInstance extends InstanceBase {
 			{ id: 'magenta', label: 'Magenta', r: 255, g: 0, b: 255 },
 			{ id: 'yellow', label: 'Yellow', r: 255, g: 255, b: 0 },
 			{ id: 'white', label: 'White', r: 255, g: 255, b: 255 },
+			{ id: 'custom', label: 'Custom RGB Value', r: 255, g: 255, b: 255 },
 		]
 
 		this.initConnection()
@@ -545,7 +547,7 @@ class TimeMachinesInstance extends InstanceBase {
 
 		this.udp.send(Buffer.from(hexstring, 'hex'))
 	}
-	setDisplayColor(color_mmss, color_hh) {
+	setDisplayColor(color_mmss, color_hh, custom_hh, custom_mmss) {
 		let hexstring = ''
 
 		let mmss_r_hex = '00'
@@ -556,7 +558,12 @@ class TimeMachinesInstance extends InstanceBase {
 		let hh_g_hex = '00'
 		let hh_b_hex = '00'
 
-		let color_mmss_obj = this.COLORTABLE.find((CLR) => CLR.id == color_mmss)
+		let color_mmss_obj = null
+		if (color_mmss === 'custom') {
+			color_mmss_obj = custom_mmss
+		} else {
+			color_mmss_obj = this.COLORTABLE.find((CLR) => CLR.id == color_mmss)
+		}
 
 		if (color_mmss_obj) {
 			mmss_r_hex = parseInt(color_mmss_obj.r).toString(16).padStart(2, '0')
@@ -564,7 +571,12 @@ class TimeMachinesInstance extends InstanceBase {
 			mmss_b_hex = parseInt(color_mmss_obj.b).toString(16).padStart(2, '0')
 		}
 
-		let color_hh_obj = this.COLORTABLE.find((CLR) => CLR.id == color_hh)
+		let color_hh_obj = null
+		if (color_hh === 'custom') {
+			color_hh_obj = custom_hh
+		} else {
+			color_hh_obj = this.COLORTABLE.find((CLR) => CLR.id == color_hh)
+		}
 
 		if (color_hh_obj) {
 			hh_r_hex = parseInt(color_hh_obj.r).toString(16).padStart(2, '0')
@@ -577,4 +589,4 @@ class TimeMachinesInstance extends InstanceBase {
 		this.udp.send(Buffer.from(hexstring, 'hex'))
 	}
 }
-runEntrypoint(TimeMachinesInstance, [])
+runEntrypoint(TimeMachinesInstance, UpgradeScripts)

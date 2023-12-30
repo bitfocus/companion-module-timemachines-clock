@@ -649,7 +649,7 @@ export function getPresets() {
 		}
 	}
 
-	for (let i = 0; i < this.COLORTABLE.length; i++) {
+	for (let i = 0; i < this.COLORTABLE.length - 1; i++) {
 		presets[`displayColors${this.COLORTABLE[i].label}`] = {
 			type: 'button',
 			category: 'Display Colors',
@@ -658,7 +658,7 @@ export function getPresets() {
 				style: 'text',
 				text: `${this.COLORTABLE[i].label}`,
 				size: '14',
-				color: this.ColorBlack,
+				color: ColorBlack,
 				bgcolor: combineRgb(this.COLORTABLE[i].r, this.COLORTABLE[i].g, this.COLORTABLE[i].b),
 			},
 			steps: [
