@@ -3,7 +3,7 @@
 	"name": "timemachines-clock",
 	"shortname": "tm-clock",
 	"description": "TimeMachines Clocks",
-	"version": "2.0.3",
+	"version": "2.1.0",
 	"license": "MIT",
 	"repository": "git+https://github.com/bitfocus/companion-module-timemachines-clock.git",
 	"bugs": "https://github.com/bitfocus/companion-module-timemachines-clock/issues",
