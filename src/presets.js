@@ -1,4 +1,5 @@
 import { combineRgb } from '@companion-module/base'
+import { TOGGLE_OFF_PNG64 } from './toggle-icons.js'
 
 export function getPresets() {
 	let presets = {}
@@ -16,6 +17,88 @@ export function getPresets() {
 			style: 'text',
 			text: '$(tm-clock:display)',
 			size: '14',
+			color: ColorWhite,
+			bgcolor: ColorBlack,
+		},
+		steps: [
+			{
+				down: [],
+				up: [],
+			},
+		],
+		feedbacks: [],
+	}
+
+	// full-button single-digit-group displays - place DD/HH/MM/SS adjacently (e.g. 4 buttons in a
+	// row) to build a combined DD:HH:MM:SS readout across a Stream Deck/Companion grid
+	presets['digitsDaysDisplay'] = {
+		type: 'button',
+		category: 'Digit Display',
+		name: 'Days Display (DD)',
+		style: {
+			style: 'text',
+			text: '$(tm-clock:digits-days)',
+			size: '44',
+			color: ColorWhite,
+			bgcolor: ColorBlack,
+		},
+		steps: [
+			{
+				down: [],
+				up: [],
+			},
+		],
+		feedbacks: [],
+	}
+
+	presets['digitsHoursDisplay'] = {
+		type: 'button',
+		category: 'Digit Display',
+		name: 'Hours Display (HH)',
+		style: {
+			style: 'text',
+			text: '$(tm-clock:digits-hours)',
+			size: '44',
+			color: ColorWhite,
+			bgcolor: ColorBlack,
+		},
+		steps: [
+			{
+				down: [],
+				up: [],
+			},
+		],
+		feedbacks: [],
+	}
+
+	presets['digitsMinutesDisplay'] = {
+		type: 'button',
+		category: 'Digit Display',
+		name: 'Minutes Display (MM)',
+		style: {
+			style: 'text',
+			text: '$(tm-clock:digits-minutes)',
+			size: '44',
+			color: ColorWhite,
+			bgcolor: ColorBlack,
+		},
+		steps: [
+			{
+				down: [],
+				up: [],
+			},
+		],
+		feedbacks: [],
+	}
+
+	presets['digitsSecondsDisplay'] = {
+		type: 'button',
+		category: 'Digit Display',
+		name: 'Seconds Display (SS)',
+		style: {
+			style: 'text',
+			text: '$(tm-clock:digits-seconds)',
+			size: '44',
 			color: ColorWhite,
 			bgcolor: ColorBlack,
 		},
@@ -476,20 +559,24 @@ export function getPresets() {
 		feedbacks: [],
 	}
 
+	// press-and-release-within-1s (short release) triggers the adjustment, rather than firing
+	// immediately on press - the 1000ms duration group also reserves a "held longer" bucket for a
+	// future long-press action, left empty for now
 	presets['add30sToTimer'] = {
 		type: 'button',
 		category: 'Countdown Timer',
-		name: `Add 30s to Timer`,
+		name: `+30 Sec`,
 		style: {
 			style: 'text',
-			text: `Add 30s to Timer`,
+			text: `+30 Sec`,
 			size: '14',
 			color: ColorWhite,
 			bgcolor: ColorBlack,
 		},
 		steps: [
 			{
-				down: [
+				down: [],
+				up: [
 					{
 						actionId: 'increaseTimerWhileRunning',
 						options: {
@@ -499,7 +586,7 @@ export function getPresets() {
 						},
 					},
 				],
-				up: [],
+				1000: [],
 			},
 		],
 		feedbacks: [],
@@ -508,17 +595,18 @@ export function getPresets() {
 	presets['add1mToTimer'] = {
 		type: 'button',
 		category: 'Countdown Timer',
-		name: `Add 1m to Timer`,
+		name: `+1 Min`,
 		style: {
 			style: 'text',
-			text: `Add 1m to Timer`,
+			text: `+1 Min`,
 			size: '14',
 			color: ColorWhite,
 			bgcolor: ColorBlack,
 		},
 		steps: [
 			{
-				down: [
+				down: [],
+				up: [
 					{
 						actionId: 'increaseTimerWhileRunning',
 						options: {
@@ -528,7 +616,7 @@ export function getPresets() {
 						},
 					},
 				],
-				up: [],
+				1000: [],
 			},
 		],
 		feedbacks: [],
@@ -537,10 +625,130 @@ export function getPresets() {
 	presets['add5mToTimer'] = {
 		type: 'button',
 		category: 'Countdown Timer',
-		name: `Add 5m to Timer`,
+		name: `+5 Min`,
 		style: {
 			style: 'text',
-			text: `Add 5m to Timer`,
+			text: `+5 Min`,
+			size: '14',
+			color: ColorWhite,
+			bgcolor: ColorBlack,
+		},
+		steps: [
+			{
+				down: [],
+				up: [
+					{
+						actionId: 'increaseTimerWhileRunning',
+						options: {
+							hours: 0,
+							minutes: 5,
+							seconds: 0,
+						},
+					},
+				],
+				1000: [],
+			},
+		],
+		feedbacks: [],
+	}
+
+	presets['subtract30sFromTimer'] = {
+		type: 'button',
+		category: 'Countdown Timer',
+		name: `-30 Sec`,
+		style: {
+			style: 'text',
+			text: `-30 Sec`,
+			size: '14',
+			color: ColorWhite,
+			bgcolor: ColorBlack,
+		},
+		steps: [
+			{
+				down: [],
+				up: [
+					{
+						actionId: 'decreaseTimerWhileRunning',
+						options: {
+							hours: 0,
+							minutes: 0,
+							seconds: 30,
+						},
+					},
+				],
+				1000: [],
+			},
+		],
+		feedbacks: [],
+	}
+
+	presets['subtract1mFromTimer'] = {
+		type: 'button',
+		category: 'Countdown Timer',
+		name: `-1 Min`,
+		style: {
+			style: 'text',
+			text: `-1 Min`,
+			size: '14',
+			color: ColorWhite,
+			bgcolor: ColorBlack,
+		},
+		steps: [
+			{
+				down: [],
+				up: [
+					{
+						actionId: 'decreaseTimerWhileRunning',
+						options: {
+							hours: 0,
+							minutes: 1,
+							seconds: 0,
+						},
+					},
+				],
+				1000: [],
+			},
+		],
+		feedbacks: [],
+	}
+
+	presets['subtract5mFromTimer'] = {
+		type: 'button',
+		category: 'Countdown Timer',
+		name: `-5 Min`,
+		style: {
+			style: 'text',
+			text: `-5 Min`,
+			size: '14',
+			color: ColorWhite,
+			bgcolor: ColorBlack,
+		},
+		steps: [
+			{
+				down: [],
+				up: [
+					{
+						actionId: 'decreaseTimerWhileRunning',
+						options: {
+							hours: 0,
+							minutes: 5,
+							seconds: 0,
+						},
+					},
+				],
+				1000: [],
+			},
+		],
+		feedbacks: [],
+	}
+
+	presets['resetCountDownTimerToLast'] = {
+		type: 'button',
+		category: 'Countdown Timer',
+		name: 'Reset Countdown Timer (Last Used Values)',
+		style: {
+			style: 'text',
+			text: `Reset\\nCountdown`,
 			size: '14',
 			color: ColorWhite,
 			bgcolor: ColorBlack,
@@ -549,12 +757,7 @@ export function getPresets() {
 			{
 				down: [
 					{
-						actionId: 'increaseTimerWhileRunning',
-						options: {
-							hours: 0,
-							minutes: 5,
-							seconds: 0,
-						},
+						actionId: 'resetCountDownTimerToLast',
 					},
 				],
 				up: [],
@@ -677,6 +880,249 @@ export function getPresets() {
 			],
 			feedbacks: [],
 		}
+	}
+
+	presets['toggleBlink'] = {
+		type: 'button',
+		category: 'Blink',
+		name: 'Toggle Blink',
+		style: {
+			style: 'text',
+			text: 'Toggle\\nBlink',
+			size: '14',
+			color: ColorWhite,
+			bgcolor: ColorBlack,
+		},
+		steps: [
+			{
+				down: [
+					{
+						actionId: 'toggleBlink',
+						options: {
+							mode: 'brightness',
+							rate: 500,
+							digit: 100,
+							dot: 100,
+							colorA: this.COLORTABLE[0].id,
+							colorB: this.COLORTABLE[1].id,
+						},
+					},
+				],
+				up: [],
+			},
+		],
+		feedbacks: [
+			{
+				feedbackId: 'blinkActive',
+				options: {},
+				style: {
+					color: ColorWhite,
+					bgcolor: ColorRed,
+				},
+			},
+		],
+	}
+
+	presets['displayValueMatchingColor'] = {
+		type: 'button',
+		category: 'Clock Display',
+		name: 'Display Value, Text Color Matches Display Color',
+		style: {
+			style: 'text',
+			text: '$(tm-clock:display)',
+			size: '14',
+			color: ColorWhite,
+			bgcolor: ColorBlack,
+		},
+		steps: [
+			{
+				down: [],
+				up: [],
+			},
+		],
+		feedbacks: [
+			{
+				feedbackId: 'displayColor',
+				options: {
+					section: 'mmss',
+				},
+			},
+		],
+	}
+
+	presets['quickBlink'] = {
+		type: 'button',
+		category: 'Blink',
+		name: 'Quick Blink',
+		style: {
+			style: 'text',
+			text: 'Quick\\nBlink',
+			size: '14',
+			color: ColorWhite,
+			bgcolor: ColorBlack,
+		},
+		steps: [
+			{
+				down: [
+					{
+						actionId: 'quickBlink',
+						options: {
+							mode: 'brightness',
+							rate: 200,
+							digit: 100,
+							dot: 100,
+							colorA: this.COLORTABLE[0].id,
+							colorB: this.COLORTABLE[1].id,
+							duration: 2000,
+						},
+					},
+				],
+				up: [],
+			},
+		],
+		feedbacks: [],
+	}
+
+	presets['stopBlink'] = {
+		type: 'button',
+		category: 'Blink',
+		name: 'Stop Blink',
+		style: {
+			style: 'text',
+			text: 'Stop\\nBlink',
+			size: '14',
+			color: ColorWhite,
+			bgcolor: ColorBlack,
+		},
+		steps: [
+			{
+				down: [
+					{
+						actionId: 'stopBlink',
+					},
+				],
+				up: [],
+			},
+		],
+		feedbacks: [],
+	}
+
+	presets['toggleAutoWarn'] = {
+		type: 'button',
+		category: 'Presentation Automation',
+		name: 'Toggle Auto-Warn (Red/Yellow Blink at 30s)',
+		style: {
+			style: 'text',
+			text: 'Auto-Warn',
+			size: '14',
+			color: ColorWhite,
+			bgcolor: ColorBlack,
+			png64: TOGGLE_OFF_PNG64,
+			pngalignment: 'center:top',
+			alignment: 'center:bottom',
+		},
+		steps: [
+			{
+				down: [
+					{
+						actionId: 'toggleAutoWarn',
+						options: {
+							threshold: 30,
+							warnMethod: 'blink',
+							mode: 'brightness',
+							rate: 400,
+							digit: 100,
+							dot: 100,
+							colorA: this.COLORTABLE[0].id,
+							colorB: this.COLORTABLE[5].id,
+						},
+					},
+				],
+				up: [],
+			},
+		],
+		feedbacks: [
+			{
+				feedbackId: 'autoWarnEnabled',
+				options: {},
+			},
+		],
+	}
+
+	presets['toggleAutoCountUp'] = {
+		type: 'button',
+		category: 'Presentation Automation',
+		name: 'Toggle Auto Count-Up After Countdown',
+		style: {
+			style: 'text',
+			text: 'Auto Count-Up',
+			size: '14',
+			color: ColorWhite,
+			bgcolor: ColorBlack,
+			png64: TOGGLE_OFF_PNG64,
+			pngalignment: 'center:top',
+			alignment: 'center:bottom',
+		},
+		steps: [
+			{
+				down: [
+					{
+						actionId: 'toggleAutoCountUp',
+						options: {
+							mode: 'sec',
+						},
+					},
+				],
+				up: [],
+			},
+		],
+		feedbacks: [
+			{
+				feedbackId: 'autoCountUpEnabled',
+				options: {},
+			},
+		],
+	}
+
+	presets['toggleTimesUpBlink'] = {
+		type: 'button',
+		category: 'Presentation Automation',
+		name: "Toggle Time's Up Blink",
+		style: {
+			style: 'text',
+			text: "Time's Up",
+			size: '14',
+			color: ColorWhite,
+			bgcolor: ColorBlack,
+			png64: TOGGLE_OFF_PNG64,
+			pngalignment: 'center:top',
+			alignment: 'center:bottom',
+		},
+		steps: [
+			{
+				down: [
+					{
+						actionId: 'toggleTimesUpBlink',
+						options: {
+							duration: 3000,
+							mode: 'brightness',
+							rate: 200,
+							digit: 100,
+							dot: 100,
+							colorA: this.COLORTABLE[0].id,
+							colorB: this.COLORTABLE[5].id,
+						},
+					},
+				],
+				up: [],
+			},
+		],
+		feedbacks: [
+			{
+				feedbackId: 'timesUpBlinkEnabled',
+				options: {},
+			},
+		],
 	}
 
 	return presets

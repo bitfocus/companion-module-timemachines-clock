@@ -20,6 +20,13 @@ class TimeMachinesInstance extends InstanceBase {
 		this.INTERVAL = null //used to poll the clock every second
 		this.CONNECTED = false //used for friendly notifying of the user that we have not received data yet
 
+		this.BLINK_INTERVAL = null //used to drive the blink (no native blink command exists for the main digits)
+		this.BLINK_TIMEOUT = null //used by Quick Blink's auto-stop
+		this.BLINK_ON = false
+		this.BLINK_MODE = 'brightness' //which resting state to restore ('brightness' or 'color') when the blink stops
+		this.BLINK_SOURCE = null //who started the current blink ('manual', 'autowarn', 'timesup') - lets each automation stop only its own blink
+		this.LAST_BRIGHTNESS = { digit: 100, dot: 100 } //remembers the last brightness set through this module, since the clock never reports its brightness back
+
 		this.DEVICEINFO = {
 			connection: '(Connecting)',
 			model: '',
@@ -30,6 +37,20 @@ class TimeMachinesInstance extends InstanceBase {
 			displayModeFriendly: '',
 			timerState: '',
 			timerStateFriendly: '',
+			timerSeconds: 0,
+			days: '000',
+			hours: '00',
+			minutes: '00',
+			seconds: '00',
+			tenths: '0',
+			ip: '',
+			mac: '',
+			ntpSyncCount: 0,
+			downtimerAlarmEnabled: false,
+			downtimerAlarmDuration: 0,
+			digitFormat: 0,
+			digitFormatFriendly: '',
+			wifiSignal: 0,
 		}
 		this.COLORTABLE = [
 			{ id: 'red', label: 'Red', r: 255, g: 0, b: 0 },
@@ -41,6 +62,27 @@ class TimeMachinesInstance extends InstanceBase {
 			{ id: 'white', label: 'White', r: 255, g: 255, b: 255 },
 			{ id: 'custom', label: 'Custom RGB Value', r: 255, g: 255, b: 255 },
 		]
+		//the clock never reports its display color back to us, so this only reflects what this module
+		//itself last commanded - it will be wrong/stale if color is changed elsewhere (the clock's own
+		//web page, TM-Manager, another Companion connection, or an Alarm's "CX" color-change event)
+		this.LAST_COLOR = { color_mmss: 'white', color_hh: 'white', custom_hh: null, custom_mmss: null }
+
+		//remembers the last countdown configured/reset through this module, so a plain "Reset" button
+		//can restore it without the operator having to resupply the same values every time
+		this.LAST_COUNTDOWN = { mode: 'sec', hours: 0, minutes: 5, seconds: 0, tseconds: 0, alarmEnable: false, alarmDuration: 3 }
+
+		//presentation-timer automations - all driven off the once-a-second poll in updateData(). Each has
+		//a "triggered" latch so it fires once per countdown run instead of every poll tick while the
+		//condition holds, and re-arms once the countdown moves back above the trigger point or the clock
+		//leaves countdown mode entirely.
+		this.AUTOWARN = { enabled: false, threshold: 30, warnMethod: 'blink', blinkOptions: null, relaySeconds: 2 }
+		this.AUTOWARN_TRIGGERED = false
+
+		this.AUTO_COUNTUP = { enabled: false, mode: 'sec' }
+		this.AUTO_COUNTUP_TRIGGERED = false
+
+		this.TIMES_UP_BLINK = { enabled: false, blinkOptions: null, duration: 3000 }
+		this.TIMES_UP_TRIGGERED = false
 
 		this.initConnection()
 
@@ -62,6 +104,16 @@ class TimeMachinesInstance extends InstanceBase {
 		if (this.INTERVAL) {
 			clearInterval(this.INTERVAL)
 			this.INTERVAL = null
+		}
+
+		if (this.BLINK_INTERVAL) {
+			clearInterval(this.BLINK_INTERVAL)
+			this.BLINK_INTERVAL = null
+		}
+
+		if (this.BLINK_TIMEOUT) {
+			clearTimeout(this.BLINK_TIMEOUT)
+			this.BLINK_TIMEOUT = null
 		}
 	}
 
@@ -232,7 +284,8 @@ class TimeMachinesInstance extends InstanceBase {
 
 		if (bytes[0] <= 3) {
 			//it's a POE, Wifi, or Dot Matrix model and uses the following bytes structure
-			let name = bytesToAscii(bytes.slice(23)).replace(/\\x00/g, '')
+			//byte 24 is where the device name starts (byte 23 is WiFi Signal Strength, handled below)
+			let name = bytesToAscii(bytes.slice(24)).replace(/\x00/g, '')
 			let firmware = bytes[11] + '.' + bytes[12]
 			let display =
 				bytes[15].toString().padStart(2, '0') +
@@ -243,12 +296,40 @@ class TimeMachinesInstance extends InstanceBase {
 			let timerHours = parseInt(bytes[15])
 			let timerMinutes = parseInt(bytes[16])
 			let timerSeconds = parseInt(bytes[17])
-			let totalSeconds = timerHours * 120 + timerMinutes * 60 + timerSeconds
+			let totalSeconds = timerHours * 3600 + timerMinutes * 60 + timerSeconds
 
 			this.DEVICEINFO.name = name
 			this.DEVICEINFO.firmware = firmware
 			this.DEVICEINFO.display = display
 			this.DEVICEINFO.timerSeconds = totalSeconds
+
+			//DD:HH:MM:SS:TT broken out as individual, independently placeable variables
+			//per the Locator Protocol API, the day count spans byte 21 (low 8 bits) and the top 3 bits
+			//of byte 22 (high bits) - the doc's own wording for byte 21 is ambiguous, so verify against
+			//actual hardware if a multi-day countdown value here matters to you
+			let dayCount = (((bytes[22] >> 5) & 0x07) << 8) | bytes[21]
+			this.DEVICEINFO.days = dayCount.toString().padStart(3, '0')
+			this.DEVICEINFO.hours = timerHours.toString().padStart(2, '0')
+			this.DEVICEINFO.minutes = timerMinutes.toString().padStart(2, '0')
+			this.DEVICEINFO.seconds = timerSeconds.toString().padStart(2, '0')
+			this.DEVICEINFO.tenths = bytes[18].toString()
+
+			this.DEVICEINFO.ip = Array.from(bytes.slice(1, 5)).join('.')
+			this.DEVICEINFO.mac = Array.from(bytes.slice(5, 11))
+				.map((b) => b.toString(16).padStart(2, '0'))
+				.join(':')
+
+			this.DEVICEINFO.ntpSyncCount = (bytes[13] << 8) | bytes[14]
+
+			this.DEVICEINFO.downtimerAlarmEnabled = (bytes[20] & 0x80) !== 0
+			this.DEVICEINFO.downtimerAlarmDuration = bytes[20] & 0x7f
+
+			let digitFormat = bytes[22] & 0x1f
+			this.DEVICEINFO.digitFormat = digitFormat
+			this.DEVICEINFO.digitFormatFriendly =
+				{ 0: '4/6 Digits', 1: '(D):H:M:S', 2: '(H):M:S.Tenths' }[digitFormat] || 'Unknown'
+
+			this.DEVICEINFO.wifiSignal = bytes[23] === 0 ? 0 : -bytes[23]
 
 			let modeBits = bytes[19].toString(2).padStart(8, '0')
 
@@ -289,6 +370,8 @@ class TimeMachinesInstance extends InstanceBase {
 				}
 			}
 		}
+
+		this.checkCountdownAutomations()
 
 		this.checkFeedbacks()
 		this.updateVariables()
@@ -378,6 +461,7 @@ class TimeMachinesInstance extends InstanceBase {
 		}
 
 		this.DEVICEINFO.timerMode = 'down'
+		this.LAST_COUNTDOWN = { mode, hours, minutes, seconds, tseconds, alarmEnable, alarmDuration }
 	}
 
 	controlCountDownTimer(command) {
@@ -427,6 +511,120 @@ class TimeMachinesInstance extends InstanceBase {
 
 		if (hexstring !== '') {
 			this.udp.send(Buffer.from(hexstring, 'hex'))
+		}
+
+		this.LAST_COUNTDOWN = { mode, hours, minutes, seconds, tseconds, alarmEnable, alarmDuration }
+	}
+
+	resetCountDownTimerToLast() {
+		let cfg = this.LAST_COUNTDOWN
+		this.resetCountDownTimer(cfg.mode, cfg.hours, cfg.minutes, cfg.seconds, cfg.tseconds, cfg.alarmEnable, cfg.alarmDuration)
+	}
+
+	configureAutoWarn(config) {
+		//stop a blink Auto-Warn itself started if it's being disarmed mid-warn - otherwise disabling it
+		//while already blinking (e.g. toggling off inside the last 30 seconds) leaves the clock blinking
+		//forever with nothing left armed to turn it off
+		if (!config.enabled && this.AUTOWARN_TRIGGERED && this.AUTOWARN.warnMethod === 'blink' && this.BLINK_SOURCE === 'autowarn') {
+			this.stopBlink()
+		}
+
+		this.AUTOWARN = config
+		this.AUTOWARN_TRIGGERED = false
+		this.checkFeedbacks('autoWarnEnabled')
+		this.updateVariables()
+	}
+
+	toggleAutoWarn(config) {
+		this.configureAutoWarn({ ...config, enabled: !this.AUTOWARN.enabled })
+	}
+
+	configureAutoCountUp(config) {
+		this.AUTO_COUNTUP = config
+		this.AUTO_COUNTUP_TRIGGERED = false
+		this.checkFeedbacks('autoCountUpEnabled')
+		this.updateVariables()
+	}
+
+	toggleAutoCountUp(config) {
+		this.configureAutoCountUp({ ...config, enabled: !this.AUTO_COUNTUP.enabled })
+	}
+
+	configureTimesUpBlink(config) {
+		//same reasoning as configureAutoWarn above - don't leave a quick-blink running with nothing
+		//armed to stop it if it's disarmed mid-flash
+		if (!config.enabled && this.TIMES_UP_TRIGGERED && this.BLINK_SOURCE === 'timesup') {
+			this.stopBlink()
+		}
+
+		this.TIMES_UP_BLINK = config
+		this.TIMES_UP_TRIGGERED = false
+		this.checkFeedbacks('timesUpBlinkEnabled')
+		this.updateVariables()
+	}
+
+	toggleTimesUpBlink(config) {
+		this.configureTimesUpBlink({ ...config, enabled: !this.TIMES_UP_BLINK.enabled })
+	}
+
+	checkCountdownAutomations() {
+		let inCountdown = this.DEVICEINFO.displayMode === 'countdown'
+		let running = this.DEVICEINFO.timerState === 'running'
+		let remaining = this.DEVICEINFO.timerSeconds
+
+		if (!inCountdown) {
+			//left countdown mode entirely - re-arm everything for the next run, and stop an Auto-Warn
+			//blink still running (e.g. Auto Count-Up switched away from countdown while Auto-Warn was
+			//mid-blink) since it has no other way to know its countdown window just ended and would
+			//otherwise be left blinking forever. Times Up's blink is NOT touched here - it's a
+			//self-timed quickBlink that must keep running for its own configured duration regardless
+			//of display mode; stopping it here would cut it short the instant Auto Count-Up switches
+			//modes, which happens on the very next poll after it starts.
+			this.AUTOWARN_TRIGGERED = false
+			this.AUTO_COUNTUP_TRIGGERED = false
+			this.TIMES_UP_TRIGGERED = false
+			if (this.BLINK_SOURCE === 'autowarn') {
+				this.stopBlink()
+			}
+			return
+		}
+
+		if (this.AUTOWARN.enabled) {
+			if (running && remaining <= this.AUTOWARN.threshold) {
+				if (!this.AUTOWARN_TRIGGERED) {
+					this.AUTOWARN_TRIGGERED = true
+					if (this.AUTOWARN.warnMethod === 'relay') {
+						this.controlRelay(this.AUTOWARN.relaySeconds)
+					} else {
+						this.startBlink(this.AUTOWARN.blinkOptions, 'autowarn')
+					}
+				}
+			} else if (remaining > this.AUTOWARN.threshold) {
+				this.AUTOWARN_TRIGGERED = false
+			}
+		}
+
+		if (this.AUTO_COUNTUP.enabled) {
+			if (running && remaining <= 0) {
+				if (!this.AUTO_COUNTUP_TRIGGERED) {
+					this.AUTO_COUNTUP_TRIGGERED = true
+					this.setCountUpTimerMode(this.AUTO_COUNTUP.mode)
+					this.controlCountUpTimer('start')
+				}
+			} else if (remaining > 0) {
+				this.AUTO_COUNTUP_TRIGGERED = false
+			}
+		}
+
+		if (this.TIMES_UP_BLINK.enabled) {
+			if (running && remaining <= 0) {
+				if (!this.TIMES_UP_TRIGGERED) {
+					this.TIMES_UP_TRIGGERED = true
+					this.quickBlink({ ...this.TIMES_UP_BLINK.blinkOptions, duration: this.TIMES_UP_BLINK.duration }, 'timesup')
+				}
+			} else if (remaining > 0) {
+				this.TIMES_UP_TRIGGERED = false
+			}
 		}
 	}
 
@@ -547,6 +745,13 @@ class TimeMachinesInstance extends InstanceBase {
 
 		this.udp.send(Buffer.from(hexstring, 'hex'))
 	}
+
+	setRestingBrightness(digit, dot) {
+		//the clock never reports its brightness back to us, so this is the only record of "normal" brightness
+		//available to restore to once something (like the blink) is done overriding it
+		this.LAST_BRIGHTNESS = { digit, dot }
+		this.setDisplayBrightness(digit, dot)
+	}
 	setDisplayColor(color_mmss, color_hh, custom_hh, custom_mmss) {
 		let hexstring = ''
 
@@ -587,6 +792,109 @@ class TimeMachinesInstance extends InstanceBase {
 		hexstring = 'B6' + mmss_r_hex + mmss_g_hex + mmss_b_hex + hh_r_hex + hh_g_hex + hh_b_hex
 
 		this.udp.send(Buffer.from(hexstring, 'hex'))
+	}
+
+	setRestingColor(color_mmss, color_hh, custom_hh, custom_mmss) {
+		//the clock never reports its color back to us, so this is the only record available of what
+		//color it should currently be
+		this.LAST_COLOR = { color_mmss, color_hh, custom_hh, custom_mmss }
+		this.setDisplayColor(color_mmss, color_hh, custom_hh, custom_mmss)
+
+		//without this, the "Text Color Matches Display Color" feedback would only pick up the change
+		//on the next poll tick instead of the instant Companion pushes the new color
+		this.checkFeedbacks('displayColor')
+	}
+
+	resolveColorRGB(colorId, custom) {
+		let colorObj = colorId === 'custom' ? custom : this.COLORTABLE.find((CLR) => CLR.id == colorId)
+		return colorObj ? { r: colorObj.r, g: colorObj.g, b: colorObj.b } : { r: 255, g: 255, b: 255 }
+	}
+
+	applyBlinkPhase(options, on) {
+		if (options.mode === 'color') {
+			let color = on ? options.colorA : options.colorB
+			this.setDisplayColor(color.id, color.id, color.custom, color.custom)
+		} else {
+			this.setDisplayBrightness(on ? options.digit : 0, on ? options.dot : 0)
+		}
+	}
+
+	toggleBlink(options) {
+		if (this.BLINK_INTERVAL) {
+			this.stopBlink()
+		} else {
+			this.startBlink(options)
+		}
+	}
+
+	//`source` records who owns the current blink ('manual', 'autowarn', 'timesup') so that turning off
+	//Auto-Warn or Time's Up Blink mid-flash only stops a blink it started itself - not a manual blink,
+	//or the other automation's blink, that happens to be running at the same moment.
+	startBlink(options, source = 'manual') {
+		if (this.BLINK_INTERVAL) {
+			clearInterval(this.BLINK_INTERVAL)
+		}
+
+		if (this.BLINK_TIMEOUT) {
+			clearTimeout(this.BLINK_TIMEOUT)
+			this.BLINK_TIMEOUT = null
+		}
+
+		this.BLINK_MODE = options.mode
+		this.BLINK_SOURCE = source
+		this.BLINK_ON = true
+		this.applyBlinkPhase(options, true)
+		this.checkFeedbacks('blinkActive')
+
+		this.BLINK_INTERVAL = setInterval(() => {
+			this.BLINK_ON = !this.BLINK_ON
+			this.applyBlinkPhase(options, this.BLINK_ON)
+			//re-check every tick, not just at start, so any button using the Blink Active feedback
+			//actually blinks in step with the clock instead of just lighting up once and staying lit
+			this.checkFeedbacks('blinkActive')
+		}, options.rate)
+	}
+
+	stopBlink() {
+		if (this.BLINK_INTERVAL) {
+			clearInterval(this.BLINK_INTERVAL)
+			this.BLINK_INTERVAL = null
+		}
+
+		if (this.BLINK_TIMEOUT) {
+			clearTimeout(this.BLINK_TIMEOUT)
+			this.BLINK_TIMEOUT = null
+		}
+
+		this.BLINK_ON = false
+		this.BLINK_SOURCE = null
+
+		if (this.BLINK_MODE === 'color') {
+			this.setDisplayColor(
+				this.LAST_COLOR.color_mmss,
+				this.LAST_COLOR.color_hh,
+				this.LAST_COLOR.custom_hh,
+				this.LAST_COLOR.custom_mmss
+			)
+			this.checkFeedbacks('displayColor')
+		} else {
+			this.setDisplayBrightness(this.LAST_BRIGHTNESS.digit, this.LAST_BRIGHTNESS.dot)
+		}
+
+		this.checkFeedbacks('blinkActive')
+	}
+
+	quickBlink(options, source = 'manual') {
+		this.startBlink(options, source)
+
+		let ownInterval = this.BLINK_INTERVAL
+		this.BLINK_TIMEOUT = setTimeout(() => {
+			this.BLINK_TIMEOUT = null
+			//only stop if nothing else has taken over the blink in the meantime
+			if (this.BLINK_INTERVAL === ownInterval) {
+				this.stopBlink()
+			}
+		}, options.duration)
 	}
 }
 runEntrypoint(TimeMachinesInstance, UpgradeScripts)

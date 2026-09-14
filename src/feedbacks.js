@@ -1,4 +1,5 @@
 import { combineRgb } from '@companion-module/base'
+import { TOGGLE_ON_PNG64 } from './toggle-icons.js'
 
 export function getFeedbacks() {
 	const feedbacks = {}
@@ -102,6 +103,92 @@ export function getFeedbacks() {
 			}
 
 			return false
+		},
+	}
+
+	feedbacks.blinkActive = {
+		type: 'boolean',
+		name: 'Blink Active',
+		description:
+			'Flashes in step with the blink itself (true during the "on" phase, false during "off") so the ' +
+			'button actually blinks along with the clock, rather than just staying lit while blink is toggled on.',
+		defaultStyle: {
+			color: foregroundColor,
+			bgcolor: backgroundColorRed,
+		},
+		options: [],
+		callback: () => {
+			return this.BLINK_ON
+		},
+	}
+
+	//These three are 'advanced' rather than 'boolean' feedbacks specifically so their png64 override
+	//is applied via callback return value instead of defaultStyle. Tested live against Companion 5.0.4:
+	//a boolean feedback's defaultStyle.png64 silently blanks the entire button (image AND text) whenever
+	//the feedback is true, even though the exact same png64 works fine as a preset's own base style.
+	//Returning it from an advanced feedback's callback renders correctly.
+	feedbacks.autoWarnEnabled = {
+		type: 'advanced',
+		name: 'Auto-Warn Enabled',
+		description: 'Switches the toggle-switch graphic to ON while Auto-Warn is armed.',
+		options: [],
+		callback: () => {
+			return this.AUTOWARN.enabled ? { png64: TOGGLE_ON_PNG64 } : {}
+		},
+	}
+
+	feedbacks.autoCountUpEnabled = {
+		type: 'advanced',
+		name: 'Auto Count-Up Enabled',
+		description: 'Switches the toggle-switch graphic to ON while Auto Count-Up is armed.',
+		options: [],
+		callback: () => {
+			return this.AUTO_COUNTUP.enabled ? { png64: TOGGLE_ON_PNG64 } : {}
+		},
+	}
+
+	feedbacks.timesUpBlinkEnabled = {
+		type: 'advanced',
+		name: "Time's Up Blink Enabled",
+		description: "Switches the toggle-switch graphic to ON while Time's Up Blink is armed.",
+		options: [],
+		callback: () => {
+			return this.TIMES_UP_BLINK.enabled ? { png64: TOGGLE_ON_PNG64 } : {}
+		},
+	}
+
+	//NOTE: the clock never reports its display color back to us, so this reflects only what this module
+	//itself last set via "Set Display Colors" (or restored after a color blink). It will be wrong/stale
+	//if the color was changed elsewhere - the clock's own web page, TM-Manager, another Companion
+	//connection, or an Alarm's "CX" color-change event.
+	feedbacks.displayColor = {
+		type: 'advanced',
+		name: 'Text Color Matches Display Color',
+		description:
+			'Sets the button text color to the color this module last set on the clock display. ' +
+			'Cannot detect color changes made outside this module (web page, TM-Manager, alarms, etc).',
+		options: [
+			{
+				type: 'dropdown',
+				label: 'Which Digits',
+				id: 'section',
+				default: 'mmss',
+				choices: [
+					{ id: 'hh', label: 'Hour Digits' },
+					{ id: 'mmss', label: 'Minute/Second Digits' },
+				],
+			},
+		],
+		callback: (feedback) => {
+			let opt = feedback.options
+			let color =
+				opt.section === 'hh'
+					? this.resolveColorRGB(this.LAST_COLOR.color_hh, this.LAST_COLOR.custom_hh)
+					: this.resolveColorRGB(this.LAST_COLOR.color_mmss, this.LAST_COLOR.custom_mmss)
+
+			return {
+				color: combineRgb(color.r, color.g, color.b),
+			}
 		},
 	}
 
